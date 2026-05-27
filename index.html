@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DRIVIXA PRO | NO HESI EDITION</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --neon: #00f2ff; --neon-dark: #0088ff; }
+        body { margin: 0; background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; touch-action: none; }
+        .font-game { font-family: 'Orbitron', sans-serif; }
+        
+        /* UI ANIMATIONS */
+        .glass { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .neon-glow { text-shadow: 0 0 10px var(--neon), 0 0 20px var(--neon); }
+        .page-transition { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(1.1); } to { opacity: 1; transform: scale(1); } }
+        
+        .btn-control { transition: all 0.1s; position: relative; overflow: hidden; }
+        .btn-control:active { transform: scale(0.9); background: var(--neon); color: #000; }
+        
+        /* THE GARAGE CARDS */
+        .vehicle-card { position: relative; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; }
+        .vehicle-card.active { border: 2px solid var(--neon); box-shadow: 0 0 30px rgba(0, 242, 255, 0.3); transform: translateY(-10px); }
+        
+        canvas { display: block; filter: contrast(1.1) saturate(1.2); }
+    </style>
+</head>
+<body>
+
+    <div id="screen-menu" class="absolute inset-0 z-50 flex flex-col p-8 bg-black page-transition">
+        <header class="flex justify-between items-center mb-12">
+            <div>
+                <h1 class="text-6xl font-game font-black italic tracking-tighter text-white">DRIVIXA<span class="text-cyan-400">.</span></h1>
+                <p class="text-[10px] tracking-[0.6em] text-gray-500 uppercase mt-2">Professional Racing Simulation</p>
+            </div>
+            <button onclick="ui.toggleSettings()" class="w-14 h-14 glass rounded-full flex items-center justify-center border border-white/10 text-2xl">⚙️</button>
+        </header>
+
+        <div class="mb-10">
+            <div class="flex gap-3">
+                <button onclick="ui.setCategory('car')" id="tab-car" class="flex-1 py-4 glass rounded-2xl border-b-4 border-cyan-500 font-bold">CARS</button>
+                <button onclick="ui.setCategory('bike')" id="tab-bike" class="flex-1 py-4 glass rounded-2xl border-b-4 border-transparent text-gray-500">BIKES</button>
+                <button onclick="ui.setCategory('truck')" id="tab-truck" class="flex-1 py-4 glass rounded-2xl border-b-4 border-transparent text-gray-500">TRUCKS</button>
+            </div>
+        </div>
+
+        <div class="mb-12">
+            <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Select Your Machine</h2>
+            <div id="garage-grid" class="grid grid-cols-4 gap-4">
+                </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6 mt-auto">
+            <button onclick="game.init('highway')" class="group p-10 glass rounded-[50px] border-b-8 border-cyan-600 hover:bg-cyan-500/10 transition-all text-center">
+                <div class="text-5xl mb-4 group-hover:scale-125 transition-transform">🛣️</div>
+                <p class="font-game italic text-sm">HIGHWAY TUNNEL</p>
+            </button>
+            <button onclick="game.init('city')" class="group p-10 glass rounded-[50px] border-b-8 border-purple-600 hover:bg-purple-500/10 transition-all text-center">
+                <div class="text-5xl mb-4 group-hover:scale-125 transition-transform">🏙️</div>
+                <p class="font-game italic text-sm">NEON OVERPASS</p>
+            </button>
+        </div>
+    </div>
+
+    <div id="screen-settings" class="hidden absolute inset-0 z-[100] bg-black/95 flex items-center justify-center p-6">
+        <div class="glass p-12 rounded-[60px] w-full max-w-sm text-center border border-white/10">
+            <h2 class="text-3xl font-game italic mb-10 neon-glow">SYSTEM SETTINGS</h2>
+            <div class="space-y-8 text-left mb-12">
+                <div class="flex justify-between items-center"><span>FPS LIMIT</span><span class="text-cyan-400 font-bold">UNLOCKED</span></div>
+                <div class="flex justify-between items-center"><span>MOTION BLUR</span><span class="text-cyan-400 font-bold">HIGH</span></div>
+                <div class="flex justify-between items-center"><span>STEER SENS</span><span class="text-cyan-400 font-bold">120%</span></div>
+                <div class="flex justify-between items-center"><span>AI DENSITY</span><span class="text-cyan-400 font-bold">HEAVY</span></div>
+            </div>
+            <button onclick="ui.toggleSettings()" class="w-full bg-white text-black py-5 rounded-3xl font-black tracking-widest hover:bg-cyan-400 transition-colors">SAVE CHANGES</button>
+        </div>
+    </div>
+
+    <div id="hud" class="hidden absolute inset-0 z-40 pointer-events-none p-8 flex flex-col justify-between">
+        <div class="flex justify-between items-start">
+            <div class="glass p-6 rounded-3xl border-l-8 border-cyan-500">
+                <p class="text-[10px] font-black text-gray-500 uppercase italic">Goal Distance</p>
+                <p id="ui-dist" class="text-4xl font-game italic">0m</p>
+            </div>
+            <div class="text-center mt-4">
+                <p id="ui-speed" class="text-8xl font-game italic leading-none neon-glow">0</p>
+                <p class="text-xs font-black text-cyan-400 tracking-[0.5em] mt-2 italic uppercase">KM/H</p>
+            </div>
+            <div class="glass p-6 rounded-3xl border-r-8 border-red-600 text-right">
+                <p class="text-[10px] font-black text-gray-500 uppercase italic">Vehicle Armor</p>
+                <p id="ui-health" class="text-3xl font-game text-red-500">❤️❤️❤️</p>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-end pb-10 pointer-events-auto">
+            <div class="flex gap-6">
+                <button id="ctrl-l" class="w-24 h-24 glass rounded-full flex items-center justify-center text-4xl border-2 border-white/5 btn-control">←</button>
+                <button id="ctrl-r" class="w-24 h-24 glass rounded-full flex items-center justify-center text-4xl border-2 border-white/5 btn-control">→</button>
+            </div>
+            <div class="flex gap-6 items-center">
+                <button onclick="location.reload()" class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center text-[10px] font-bold text-gray-500 border border-white/10">EXIT</button>
+                <button id="ctrl-brake" class="w-24 h-24 glass border-4 border-red-600 rounded-full font-black text-xs btn-control">BRAKE</button>
+                <button id="ctrl-gas" class="w-32 h-32 bg-cyan-500 rounded-full text-black font-game text-3xl italic shadow-[0_0_50px_rgba(0,242,255,0.4)] btn-control">GAS</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+
+    <script>
+        /* DRIVIXA GAME ENGINE v3.0 (PRO)
+        Author: Gemini AI
+        Features: Raycasting Horizon, Lean Physics, AI Traffic, State Management
+        */
+
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const ui = {
+            category: 'car',
+            selected: '🏎️',
+            models: {
+                car: ['🏎️', '🚗', '🚘', '🚙'],
+                bike: ['🏍️', '🏍️', '🛵', '🚲'],
+                truck: ['🚚', '🚛', '🚐', '🚜']
+            },
+            toggleSettings() {
+                document.getElementById('screen-settings').classList.toggle('hidden');
+            },
+            setCategory(c) {
+                this.category = c;
+                ['car','bike','truck'].forEach(t => {
+                    const btn = document.getElementById('tab-'+t);
+                    btn.className = (t === c) ? "flex-1 py-4 glass rounded-2xl border-b-4 border-cyan-500 font-bold" : "flex-1 py-4 glass rounded-2xl border-b-4 border-transparent text-gray-500";
+                });
+                this.renderGarage();
+            },
+            renderGarage() {
+                const grid = document.getElementById('garage-grid');
+                grid.innerHTML = this.models[this.category].map((v, i) => `
+                    <div onclick="ui.selectVehicle('${v}', this)" class="vehicle-card glass h-24 flex items-center justify-center text-4xl rounded-3xl ${i===0?'active':''}">
+                        ${v}
+                    </div>
+                `).join('');
+                this.selected = this.models[this.category][0];
+            },
+            selectVehicle(v, el) {
+                this.selected = v;
+                document.querySelectorAll('.vehicle-card').forEach(c => c.classList.remove('active'));
+                el.classList.add('active');
+            }
+        };
+
+        const game = {
+            active: false,
+            speed: 0,
+            x: 0,
+            dist: 3000,
+            health: 3,
+            tilt: 0,
+            roadOffset: 0,
+            traffic: [],
+            inputs: { gas: false, brake: false, l: false, r: false },
+            
+            init(env) {
+                document.getElementById('screen-menu').style.display = 'none';
+                document.getElementById('hud').style.display = 'flex';
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                this.x = canvas.width / 2;
+                this.active = true;
+                this.spawnTraffic();
+                this.loop();
+            },
+
+            spawnTraffic() {
+                for(let i=0; i<4; i++) {
+                    this.traffic.push({
+                        x: Math.random() * canvas.width,
+                        y: -Math.random() * 2000,
+                        v: Math.random() * 5 + 2,
+                        icon: ['🚗','🚕','🚐','🚚'][Math.floor(Math.random()*4)]
+                    });
+                }
+            },
+
+            handleInput() {
+                const bind = (id, k) => {
+                    const el = document.getElementById(id);
+                    el.onmousedown = el.ontouchstart = (e) => { e.preventDefault(); this.inputs[k] = true; };
+                    el.onmouseup = el.ontouchend = (e) => { e.preventDefault(); this.inputs[k] = false; };
+                };
+                bind('ctrl-gas', 'gas'); bind('ctrl-brake', 'brake');
+                bind('ctrl-l', 'l'); bind('ctrl-r', 'r');
+            },
+
+            loop() {
+                if(!this.active) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // --- RENDERING 3D PERSPECTIVE ---
+                // Sky/Background
+                let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, '#020617');
+                grad.addColorStop(0.5, '#1e1b4b');
+                grad.addColorStop(1, '#000');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0,0, canvas.width, canvas.height);
+
+                // Road Draw
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.moveTo(canvas.width * 0.48, 0); 
+                ctx.lineTo(canvas.width * 0.52, 0);
+                ctx.lineTo(canvas.width * 1.5, canvas.height);
+                ctx.lineTo(-canvas.width * 0.5, canvas.height);
+                ctx.fill();
+
+                // Road Lines (Perspective movement)
+                this.roadOffset += this.speed / 10;
+                ctx.strokeStyle = "rgba(0, 242, 255, 0.2)";
+                ctx.setLineDash([40, 60]);
+                ctx.lineDashOffset = -this.roadOffset;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(canvas.width/2, 0); ctx.lineTo(canvas.width/2, canvas.height);
+                ctx.stroke();
+
+                // --- PHYSICS ---
+                if(this.inputs.gas) this.speed = Math.min(this.speed + 2.2, 320);
+                else if(this.inputs.brake) this.speed = Math.max(this.speed - 15, 0);
+                else this.speed = Math.max(this.speed - 1, 0);
+
+                if(this.inputs.l) { this.x -= (this.speed/30); this.tilt = -18; }
+                else if(this.inputs.r) { this.x += (this.speed/30); this.tilt = 18; }
+                else { this.tilt *= 0.85; }
+
+                // --- TRAFFIC ---
+                ctx.font = "80px sans-serif";
+                ctx.textAlign = "center";
+                this.traffic.forEach((t, i) => {
+                    t.y += (this.speed / 15) + t.v;
+                    ctx.fillText(t.icon, t.x, t.y);
+
+                    // Accident detection
+                    if(Math.abs(t.x - this.x) < 70 && Math.abs(t.y - (canvas.height-200)) < 70) {
+                        this.health--;
+                        this.speed *= 0.2;
+                        t.y = -500; 
+                        if(this.health <= 0) { alert("CAR DESTROYED!"); location.reload(); }
+                    }
+                    if(t.y > canvas.height) { t.y = -500; t.x = Math.random() * canvas.width; }
+                });
+
+                // --- DRAW PLAYER ---
+                ctx.save();
+                ctx.translate(this.x, canvas.height - 200);
+                ctx.rotate(this.tilt * Math.PI / 180);
+                ctx.font = "120px sans-serif";
+                ctx.shadowBlur = 40; ctx.shadowColor = "cyan";
+                ctx.fillText(ui.selected, 0, 0);
+                ctx.restore();
+
+                // HUD UPDATE
+                this.dist -= (this.speed / 500);
+                document.getElementById('ui-speed').innerText = Math.floor(this.speed);
+                document.getElementById('ui-dist').innerText = Math.max(0, Math.floor(this.dist)) + "m";
+                document.getElementById('ui-health').innerText = "❤️".repeat(this.health);
+
+                if(this.dist <= 0) { alert("YOU WON!"); location.reload(); }
+                
+                requestAnimationFrame(() => this.loop());
+            }
+        };
+
+        // Initialize Everything
+        ui.renderGarage();
+        game.handleInput();
+    </script>
+</body>
+</html>
