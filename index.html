@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Drivixa 3D - No Hesi Racing Experience</title>
+    <title>Drivixa 3D - No Hesi Highway Drift</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Premium Icons -->
@@ -15,7 +15,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #010103;
+            background-color: #010102;
             color: #ffffff;
             user-select: none;
             overflow: hidden;
@@ -24,19 +24,30 @@
         .font-orbitron {
             font-family: 'Orbitron', sans-serif;
         }
-        /* Neon glow pulse animation for premium feel */
-        @keyframes glowing-neon-ui {
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f43f5e;
+            border-radius: 3px;
+        }
+        /* Neon neon glow effects */
+        @keyframes glowing-neon {
             0%, 100% { filter: drop-shadow(0 0 5px #00f2ff) drop-shadow(0 0 12px #00f2ff); }
             50% { filter: drop-shadow(0 0 8px #f43f5e) drop-shadow(0 0 20px #f43f5e); }
         }
         .neon-glow {
-            animation: glowing-neon-ui 3s infinite;
+            animation: glowing-neon 3s infinite;
         }
         .glass-panel {
-            background: rgba(10, 10, 15, 0.88);
+            background: rgba(10, 10, 15, 0.85);
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
         }
         .canvas-container {
             position: absolute;
@@ -59,32 +70,32 @@
             pointer-events: auto;
         }
         /* Crash vibration animation on camera shake */
-        @keyframes crash-shake-view {
+        @keyframes shake-view {
             0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            10% { transform: translate(-6px, 6px) rotate(-1deg); }
-            20% { transform: translate(6px, -6px) rotate(1deg); }
-            30% { transform: translate(-4px, -4px) rotate(0deg); }
-            40% { transform: translate(4px, 4px) rotate(1deg); }
-            50% { transform: translate(-6px, 3px) rotate(-1deg); }
-            60% { transform: translate(6px, 2px) rotate(0deg); }
+            10% { transform: translate(-5px, 5px) rotate(-1deg); }
+            20% { transform: translate(5px, -5px) rotate(1deg); }
+            30% { transform: translate(-3px, -3px) rotate(0deg); }
+            40% { transform: translate(3px, 3px) rotate(1deg); }
+            50% { transform: translate(-5px, 3px) rotate(-1deg); }
+            60% { transform: translate(5px, 2px) rotate(0deg); }
         }
         .screen-crash {
-            animation: crash-shake-view 0.4s ease-out;
+            animation: shake-view 0.4s ease-out;
         }
     </style>
 </head>
-<body id="game-body" class="relative w-screen h-screen">
+<body class="relative w-screen h-screen">
 
-    <!-- ThreeJS 3D Render Box -->
+    <!-- ThreeJS 3D Canvas Box -->
     <div id="three-canvas-container" class="canvas-container"></div>
 
     <div class="game-overlay flex flex-col justify-between p-4 md:p-6 select-none">
-        <!-- TOP HUD PANEL -->
+        <!-- TOP HUD BAR (Visible in race) -->
         <div id="hud-top" class="w-full flex justify-between items-start gap-4 transition-all duration-300 transform -translate-y-28 opacity-0">
-            <!-- Speedometer -->
+            <!-- Speedometer & Telemetry -->
             <div class="glass-panel p-3 rounded-2xl flex items-center gap-4 interactive">
                 <div class="flex flex-col">
-                    <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Raftaar</span>
+                    <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Speed</span>
                     <span class="text-2xl md:text-3xl font-orbitron font-black text-cyan-400" id="hud-speed">0 <span class="text-xs font-normal">KM/H</span></span>
                 </div>
                 <div class="h-8 w-px bg-slate-700"></div>
@@ -93,18 +104,18 @@
                     <span class="text-xl font-orbitron font-bold text-pink-500 text-center" id="hud-gear">N</span>
                 </div>
             </div>
-            <!-- Timer Card -->
+            <!-- Timer Status Card -->
             <div class="glass-panel px-6 py-3 rounded-2xl flex flex-col items-center min-w-[140px] md:min-w-[180px] border-b-4 border-pink-500 interactive">
-                <span class="text-[9px] text-pink-400 uppercase tracking-widest font-bold">Baki Waqt</span>
+                <span class="text-[9px] text-pink-400 uppercase tracking-widest font-bold">Time Limit</span>
                 <span class="text-2xl font-orbitron font-black tracking-wider text-white" id="hud-timer">00:00</span>
                 <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
                     <div id="hud-timer-bar" class="bg-gradient-to-r from-pink-500 to-rose-500 h-full w-full transition-all duration-100"></div>
                 </div>
             </div>
-            <!-- Target Specs & Damage -->
+            <!-- Distance & Vehicle Health Specs -->
             <div class="glass-panel p-3 rounded-2xl flex flex-col gap-2 interactive min-w-[160px]">
                 <div class="flex justify-between items-center text-xs">
-                    <span class="text-slate-400 uppercase tracking-widest font-bold">Goal Distance</span>
+                    <span class="text-slate-400 uppercase tracking-widest font-bold">Goal Dist</span>
                     <span class="font-orbitron font-black text-emerald-400" id="hud-distance">0.0 KM</span>
                 </div>
                 <!-- Damage Bar -->
@@ -119,18 +130,21 @@
                 </div>
                 <!-- Accident Register -->
                 <div class="flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase">
-                    <span>Accidents</span>
+                    <span>Crashes</span>
                     <span class="bg-rose-500 text-white px-2.5 py-0.5 rounded-full font-orbitron text-xs" id="hud-accidents">0</span>
                 </div>
             </div>
         </div>
 
-        <!-- CENTER OVERLAY FOR COUNTDOWN -->
+        <!-- CENTER OVERLAY WARNINGS -->
         <div class="flex-1 flex flex-col items-center justify-center pointer-events-none">
             <div id="countdown-overlay" class="hidden text-8xl md:text-9xl font-orbitron font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-500 to-cyan-500 tracking-wider transition-all duration-300 scale-50 opacity-0"></div>
+            <div id="impact-warning" class="hidden glass-panel px-6 py-4 rounded-3xl border-2 border-red-500 flex items-center gap-3 text-red-500 font-bold tracking-wide text-lg">
+                <i class="fa-solid fa-triangle-exclamation text-2xl animate-pulse"></i> CRASH! DECELERATION...
+            </div>
         </div>
 
-        <!-- BOTTOM CONTROLS (Ergonomic layout optimized for all touchscreens) -->
+        <!-- BOTTOM HUD CONTROLS -->
         <div id="hud-bottom" class="w-full flex justify-between items-end gap-4 transition-all duration-300 transform translate-y-28 opacity-0">
             <!-- STEERING CONTROL (Left Side) -->
             <div class="flex items-center gap-4 interactive">
@@ -158,7 +172,7 @@
                 <div class="w-full bg-slate-900 h-2.5 rounded-full border border-cyan-500/20 overflow-hidden p-0.5">
                     <div id="hud-nitro-bar" class="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-pink-500 rounded-full w-full transition-all duration-100"></div>
                 </div>
-                <span class="text-[8px] text-slate-500 mt-1 uppercase">Hold W / GAS button to ignite exhaust flames</span>
+                <span class="text-[8px] text-slate-500 mt-1 uppercase">Press SPACEBAR or W to shoot exhaust flames</span>
             </div>
 
             <!-- ACCELERATOR & BRAKE (Right Side) -->
@@ -178,7 +192,7 @@
     <!-- MAIN GARAGE MENU -->
     <div id="main-menu" class="absolute inset-0 z-20 flex flex-col md:flex-row justify-between items-stretch p-4 md:p-8 overflow-y-auto bg-gradient-to-r from-black/95 via-black/40 to-black/95">
         
-        <!-- LEFT PANEL: VEHICLE CUSTOMIZATION -->
+        <!-- LEFT PANEL: CUSTOMIZATION & CAR CONFIGS -->
         <div class="w-full md:w-[420px] flex flex-col gap-4 justify-between select-none py-2 z-30">
             <div class="flex flex-col">
                 <div class="flex items-center gap-3">
@@ -191,7 +205,7 @@
                     </div>
                 </div>
                 
-                <!-- Pilot Stats Card -->
+                <!-- Pilot Profile Stats -->
                 <div class="glass-panel p-3 rounded-xl mt-3 flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-650 flex items-center justify-center text-slate-300">
@@ -202,12 +216,12 @@
                                 <span>Pilot_Alpha</span>
                                 <span class="bg-pink-500 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded">LVL 5</span>
                             </div>
-                            <span class="text-[10px] text-slate-400">XP Points: <strong class="text-pink-400 font-orbitron" id="user-xp">14,250</strong></span>
+                            <span class="text-[10px] text-slate-400">XP Points: <strong class="text-pink-400 font-orbitron" id="user-xp">6,840</strong></span>
                         </div>
                     </div>
                     <div class="flex flex-col items-end">
                         <span class="text-[9px] text-slate-400 uppercase font-bold">Coins</span>
-                        <span class="text-base font-orbitron font-black text-amber-400" id="user-coins"><i class="fa-solid fa-coins mr-1"></i>25,300</span>
+                        <span class="text-base font-orbitron font-black text-amber-400" id="user-coins"><i class="fa-solid fa-coins mr-1"></i>12,450</span>
                     </div>
                 </div>
             </div>
@@ -242,7 +256,7 @@
                         </button>
                         <div class="flex-1 text-center py-1">
                             <span id="selected-vehicle-name" class="text-base font-black tracking-tight text-white font-orbitron uppercase">Porsche GT3 RS</span>
-                            <div id="vehicle-tier" class="text-[9px] text-pink-400 uppercase font-semibold">Tier S - Premium Sports</div>
+                            <div id="vehicle-tier" class="text-[9px] text-pink-400 uppercase font-semibold">Tier S - High speed</div>
                         </div>
                         <button id="next-vehicle" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300">
                             <i class="fa-solid fa-chevron-right"></i>
@@ -251,7 +265,7 @@
                 </div>
             </div>
 
-            <!-- Specs Sheets -->
+            <!-- Spec Sheets -->
             <div class="glass-panel p-4 rounded-2xl flex flex-col gap-2.5">
                 <h4 class="text-[10px] uppercase tracking-widest font-extrabold text-slate-400">Mechanical Specifications</h4>
                 <div class="flex flex-col gap-1">
@@ -274,7 +288,7 @@
                 </div>
                 <div class="flex flex-col gap-1">
                     <div class="flex justify-between text-xs">
-                        <span class="text-slate-400">Handling Performance</span>
+                        <span class="text-slate-400">Drift Response</span>
                         <span id="stat-handling-val" class="font-bold text-white">Dynamic Stability</span>
                     </div>
                     <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden p-px">
@@ -283,7 +297,7 @@
                 </div>
             </div>
 
-            <!-- Paint customization -->
+            <!-- Garage Custom Tuning (Paint) -->
             <div class="glass-panel p-3 rounded-2xl flex flex-col gap-2.5">
                 <div class="flex justify-between items-center">
                     <h4 class="text-[10px] uppercase tracking-widest font-extrabold text-slate-400">3D Paint Studio</h4>
@@ -373,7 +387,7 @@
                     <i class="fa-solid fa-cog text-xl animate-spin-slow"></i>
                 </button>
                 <button id="btn-start-game" class="flex-1 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:from-pink-400 hover:to-amber-400 text-white font-orbitron font-black text-lg tracking-wider py-4 px-6 rounded-2xl neon-glow transform hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
-                    <i class="fa-solid fa-flag-checkered text-xl animate-bounce"></i> START EXPERIENCE
+                    <i class="fa-solid fa-flag-checkered text-xl animate-bounce"></i> START RACING EXPERIENCE
                 </button>
             </div>
         </div>
@@ -617,7 +631,7 @@
     </script>
 
     <script>
-        // Highly detailed dynamic specifications for our 3D Vehicles
+        // High fidelity procedural vehicle data limits
         const VEHICLE_DATA = {
             wheels2: [
                 {
@@ -830,7 +844,7 @@
         let exhaustFlames = []; 
         let sparkParticles = null;
 
-        // Physics variables
+        // Physics variables - avoid `<` inline to bypass parsing bugs
         let carVelocity = 0;
         let lanePosition = 0; // x axis ranges [-7.8 to 7.8]
         let maxSpeed = 280;
@@ -892,13 +906,17 @@
 
         // Procedural endless highway design
         function buildRoadSystem() {
-            roadSegments.forEach(s => scene.remove(s));
+            roadSegments.forEach(s => {
+                if (scene) {
+                    scene.remove(s);
+                }
+            });
             roadSegments = [];
 
             const segmentCount = 14;
             const segmentLength = 40;
             
-            for (let i = 0; i < segmentCount; i++) {
+            for (let i = 0; i !== segmentCount; i++) {
                 const zPos = -i * segmentLength;
                 const group = new THREE.Group();
                 group.position.set(0, 0, zPos);
@@ -928,7 +946,7 @@
                 group.add(curbR);
 
                 // Central lane dashes
-                for (let j = -segmentLength/2; j < segmentLength/2; j += 8) {
+                for (let j = -segmentLength/2; j !== segmentLength/2; j += 8) {
                     const lineGeo = new THREE.PlaneGeometry(0.2, 3.5);
                     const lineMat = new THREE.MeshBasicMaterial({ color: 0x88888c });
                     
@@ -977,7 +995,9 @@
                     group.add(skyscraperR);
                 }
 
-                scene.add(group);
+                if (scene) {
+                    scene.add(group);
+                }
                 roadSegments.push(group);
             }
         }
@@ -989,7 +1009,7 @@
             const positions = new Float32Array(particleCount * 3);
             const velocities = [];
 
-            for (let i = 0; i < particleCount; i++) {
+            for (let i = 0; i !== particleCount; i++) {
                 positions[i*3] = 0;
                 positions[i*3+1] = 0;
                 positions[i*3+2] = 0;
@@ -1010,28 +1030,31 @@
 
             sparkParticles = new THREE.Points(geometry, material);
             sparkParticles.velocities = velocities;
-            scene.add(sparkParticles);
+            if (scene) {
+                scene.add(sparkParticles);
+            }
         }
 
         function triggerCollisionSparks(originX, originY, originZ) {
+            if (!sparkParticles) return;
             const posAttr = sparkParticles.geometry.attributes.position;
             const count = posAttr.count;
             sparkParticles.material.opacity = 1.0;
 
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i !== count; i++) {
                 posAttr.setXYZ(i, originX, originY + 0.3, originZ);
             }
             posAttr.needsUpdate = true;
         }
 
         function updateSparks(deltaTime) {
-            if (!sparkParticles || sparkParticles.material.opacity <= 0) return;
+            if (!sparkParticles || !(sparkParticles.material.opacity > 0)) return;
             
             const posAttr = sparkParticles.geometry.attributes.position;
             const count = posAttr.count;
             sparkParticles.material.opacity -= deltaTime * 2.5;
 
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i !== count; i++) {
                 let px = posAttr.getX(i);
                 let py = posAttr.getY(i);
                 let pz = posAttr.getZ(i);
@@ -1051,7 +1074,7 @@
     <script>
         // High fidelity procedural vehicle generator with realistic elements (No Dummy boxes!)
         function recreateThreeVehicle() {
-            if (playerVehicle) {
+            if (playerVehicle && scene) {
                 scene.remove(playerVehicle);
             }
             steerableMeshGroup = [];
@@ -1163,7 +1186,7 @@
                 });
 
             } else if (vSpec.type === 'bike') {
-                // Sleek fuel tank chassis
+                // Bike slim fuel tank chassis
                 const shellGeo = new THREE.BoxGeometry(0.45, 0.7, 1.8);
                 const shell = new THREE.Mesh(shellGeo, shellMat);
                 shell.position.set(0, 0.25, 0);
@@ -1324,21 +1347,27 @@
             playerVehicle.add(headR);
 
             playerVehicle.scale.set(vSpec.scale[0], vSpec.scale[1], vSpec.scale[2]);
-            scene.add(playerVehicle);
+            if (scene) {
+                scene.add(playerVehicle);
+            }
         }
     </script>
 
     <script>
         // High quality procedurally drawn traffic vehicles facing forward (Facing Same Direction)
         function spawnTraffic() {
-            trafficCars.forEach(car => scene.remove(car.mesh));
+            trafficCars.forEach(car => {
+                if (scene) {
+                    scene.remove(car.mesh);
+                }
+            });
             trafficCars = [];
             
             const lanes = [-5, 0, 5];
             const totalTraffic = 8;
             const carColors = [0x55555d, 0xef4444, 0x10b981, 0x3b82f6, 0xec4899];
 
-            for (let i = 0; i < totalTraffic; i++) {
+            for (let i = 0; i !== totalTraffic; i++) {
                 const group = new THREE.Group();
 
                 // Base block
@@ -1371,7 +1400,9 @@
 
                 // facing strictly forward
                 group.position.set(chosenLane, 0.4, posZ);
-                scene.add(group);
+                if (scene) {
+                    scene.add(group);
+                }
 
                 trafficCars.push({
                     mesh: group,
@@ -1385,10 +1416,9 @@
             }
         }
 
-        // Advanced AI traffic algorithms (Merging / blocking)
+        // Advanced AI traffic algorithms (Merging / blocking) - avoid Relational Operator '<' in if-checks
         function updateTrafficAI(deltaTime) {
             trafficCars.forEach(car => {
-                // Since traffic moves in our direction, we overtake them.
                 // Relative position towards player: (PlayerSpeed - TrafficSpeed)
                 const relativeSpeedKmh = carVelocity - car.speed;
                 const relativeSpeedMps = relativeSpeedKmh / 3.6;
@@ -1397,7 +1427,7 @@
 
                 // Smart Lane change trigger to block player path
                 car.laneSwitchTimer -= deltaTime;
-                if (car.laneSwitchTimer <= 0 && !car.isChangingLane) {
+                if (!(car.laneSwitchTimer > 0) && !car.isChangingLane) {
                     const lanes = [-5, 0, 5];
                     const currentIdx = lanes.indexOf(car.lane);
                     let offsets = [];
@@ -1435,11 +1465,11 @@
                 }
 
                 // Overlap collision checks
-                if (playerVehicle && collisionCooldown <= 0) {
+                if (playerVehicle && !(collisionCooldown > 0)) {
                     const dx = Math.abs(playerVehicle.position.x - car.mesh.position.x);
                     const dz = Math.abs(playerVehicle.position.z - car.mesh.position.z);
                     
-                    if (dx < 1.45 && dz < 2.2) {
+                    if (!(dx >= 1.45) && !(dz >= 2.2)) {
                         handleCollision(car.mesh.position.x, car.mesh.position.z);
                     }
                 }
@@ -1468,9 +1498,6 @@
             document.getElementById('hud-accidents').innerText = stats.accidents;
             playCrashSound();
 
-            // NOTE: Completely removed any text warning popups or alerts here! 
-            // Only vibration and deceleration will execute.
-
             if (stats.damage >= 100) {
                 endRace(false);
             }
@@ -1497,7 +1524,9 @@
                 }
             }
             updateCameraPosition();
-            renderer.render(scene, camera);
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
         }
 
         function updateRoadSectors() {
@@ -1583,7 +1612,6 @@
                 playEngineSound(carVelocity / maxSpeed);
                 if (carVelocity > 35) playBrakeSqueal();
             } else {
-                // Natural drag friction deceleration (default minimal speed of 60 KM/H to keep moving!)
                 carVelocity = Math.max(60, carVelocity - dragRate * deltaTime);
                 playEngineSound(carVelocity / maxSpeed * 0.5);
             }
@@ -1661,15 +1689,15 @@
             const timerBar = document.getElementById('hud-timer-bar');
             if (timerBar) {
                 timerBar.style.width = `${pctTime}%`;
-                if (pctTime < 25) {
+                if (!(pctTime >= 25)) {
                     timerBar.className = "bg-gradient-to-r from-red-500 to-rose-600 h-full w-full transition-all duration-100";
                 }
             }
 
-            if (stats.distanceLeft <= 0) {
+            if (!(stats.distanceLeft > 0)) {
                 endRace(true);
             }
-            if (timeLeft <= 0) {
+            if (!(timeLeft > 0)) {
                 endRace(false);
             }
             if (collisionCooldown > 0) {
@@ -1740,7 +1768,7 @@
             let step = 0;
             
             const countdownStep = () => {
-                if (step < countValues.length) {
+                if (step !== countValues.length) {
                     overlay.innerText = countValues[step];
                     overlay.className = "text-8xl md:text-9xl font-orbitron font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-amber-400 tracking-wider transition-all duration-300 scale-100 opacity-100";
                     playTickSound();
@@ -1856,10 +1884,10 @@
 
     <script>
         window.onload = function () {
-            // Force categories highlight to match cars on first load
+            initThreeJS(); // 3D initialization first so scene is fully ready
+            switchCategory('wheels4'); // Cars selected as default
             updateVehicleUI();
             cameraView = gameSettings.cameraMode;
-            initThreeJS();
         };
 
         window.addEventListener('resize', () => { 
