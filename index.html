@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Drivixa - Realistic 3D Racing Experience</title>
+    <title>Drivixa 3D - No Hesi Racing Experience</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome for Premium Icons -->
+    <!-- FontAwesome Premium Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
-    <!-- Three.js Library -->
+    <!-- Three.js Engine -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #030303;
+            background-color: #010103;
             color: #ffffff;
             user-select: none;
             overflow: hidden;
@@ -24,29 +24,19 @@
         .font-orbitron {
             font-family: 'Orbitron', sans-serif;
         }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #ec4899;
-            border-radius: 3px;
-        }
-        /* Keyframe animations */
-        @keyframes neon-pulse {
-            0%, 100% { filter: drop-shadow(0 0 5px #ec4899) drop-shadow(0 0 15px #ec4899); }
-            50% { filter: drop-shadow(0 0 10px #f43f5e) drop-shadow(0 0 25px #f43f5e); }
+        /* Neon glow pulse animation for premium feel */
+        @keyframes glowing-neon-ui {
+            0%, 100% { filter: drop-shadow(0 0 5px #00f2ff) drop-shadow(0 0 12px #00f2ff); }
+            50% { filter: drop-shadow(0 0 8px #f43f5e) drop-shadow(0 0 20px #f43f5e); }
         }
         .neon-glow {
-            animation: neon-pulse 3s infinite;
+            animation: glowing-neon-ui 3s infinite;
         }
         .glass-panel {
-            background: rgba(10, 10, 10, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(10, 10, 15, 0.88);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
         }
         .canvas-container {
             position: absolute;
@@ -68,107 +58,131 @@
         .interactive {
             pointer-events: auto;
         }
+        /* Crash vibration animation on camera shake */
+        @keyframes crash-shake-view {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-6px, 6px) rotate(-1deg); }
+            20% { transform: translate(6px, -6px) rotate(1deg); }
+            30% { transform: translate(-4px, -4px) rotate(0deg); }
+            40% { transform: translate(4px, 4px) rotate(1deg); }
+            50% { transform: translate(-6px, 3px) rotate(-1deg); }
+            60% { transform: translate(6px, 2px) rotate(0deg); }
+        }
+        .screen-crash {
+            animation: crash-shake-view 0.4s ease-out;
+        }
     </style>
 </head>
-<body class="relative w-screen h-screen">
+<body id="game-body" class="relative w-screen h-screen">
 
+    <!-- ThreeJS 3D Render Box -->
     <div id="three-canvas-container" class="canvas-container"></div>
 
     <div class="game-overlay flex flex-col justify-between p-4 md:p-6 select-none">
-        <!-- TOP STATS BAR (Only visible in-race) -->
-        <div id="hud-top" class="w-full flex justify-between items-start gap-4 transition-all duration-300 transform -translate-y-24 opacity-0">
-            <!-- Speed & Telemetry -->
-            <div class="glass-panel p-3 rounded-xl flex items-center gap-4 interactive">
+        <!-- TOP HUD PANEL -->
+        <div id="hud-top" class="w-full flex justify-between items-start gap-4 transition-all duration-300 transform -translate-y-28 opacity-0">
+            <!-- Speedometer -->
+            <div class="glass-panel p-3 rounded-2xl flex items-center gap-4 interactive">
                 <div class="flex flex-col">
-                    <span class="text-xs text-slate-400 uppercase tracking-widest font-semibold">Speed</span>
-                    <span class="text-2xl md:text-3xl font-orbitron font-extrabold text-cyan-400" id="hud-speed">0 <span class="text-xs">KM/H</span></span>
+                    <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Raftaar</span>
+                    <span class="text-2xl md:text-3xl font-orbitron font-black text-cyan-400" id="hud-speed">0 <span class="text-xs font-normal">KM/H</span></span>
                 </div>
                 <div class="h-8 w-px bg-slate-700"></div>
                 <div class="flex flex-col">
-                    <span class="text-xs text-slate-400 uppercase tracking-widest font-semibold">Gear</span>
-                    <span class="text-xl font-orbitron font-bold text-pink-500" id="hud-gear">N</span>
+                    <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Gear</span>
+                    <span class="text-xl font-orbitron font-bold text-pink-500 text-center" id="hud-gear">N</span>
                 </div>
             </div>
-            <!-- Timer & Distance Challenge Status -->
-            <div class="glass-panel px-6 py-3 rounded-xl flex flex-col items-center min-w-[150px] md:min-w-[200px] border-b-4 border-pink-500 interactive">
-                <span class="text-xs text-pink-400 uppercase tracking-widest font-bold">Time Left</span>
-                <span class="text-3xl font-orbitron font-black tracking-wider text-white" id="hud-timer">00:00</span>
+            <!-- Timer Card -->
+            <div class="glass-panel px-6 py-3 rounded-2xl flex flex-col items-center min-w-[140px] md:min-w-[180px] border-b-4 border-pink-500 interactive">
+                <span class="text-[9px] text-pink-400 uppercase tracking-widest font-bold">Baki Waqt</span>
+                <span class="text-2xl font-orbitron font-black tracking-wider text-white" id="hud-timer">00:00</span>
                 <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
                     <div id="hud-timer-bar" class="bg-gradient-to-r from-pink-500 to-rose-500 h-full w-full transition-all duration-100"></div>
                 </div>
             </div>
-            <!-- Distance Left, Damage & Accidents -->
-            <div class="glass-panel p-3 rounded-xl flex flex-col gap-2 interactive min-w-[160px]">
+            <!-- Target Specs & Damage -->
+            <div class="glass-panel p-3 rounded-2xl flex flex-col gap-2 interactive min-w-[160px]">
                 <div class="flex justify-between items-center text-xs">
-                    <span class="text-slate-400 uppercase tracking-widest font-semibold">Distance</span>
-                    <span class="font-orbitron font-bold text-emerald-400" id="hud-distance">0.0 KM</span>
+                    <span class="text-slate-400 uppercase tracking-widest font-bold">Goal Distance</span>
+                    <span class="font-orbitron font-black text-emerald-400" id="hud-distance">0.0 KM</span>
                 </div>
-                <!-- Damage Progress bar -->
+                <!-- Damage Bar -->
                 <div class="flex flex-col gap-1">
-                    <div class="flex justify-between text-[10px] uppercase font-bold text-rose-400">
-                        <span>Damage</span>
+                    <div class="flex justify-between text-[9px] uppercase font-bold text-rose-400">
+                        <span>Chassis Damage</span>
                         <span id="hud-damage-text">0%</span>
                     </div>
-                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                         <div id="hud-damage-bar" class="bg-gradient-to-r from-emerald-500 to-rose-500 h-full w-0 transition-all duration-300"></div>
                     </div>
                 </div>
-                <!-- Accident Count -->
-                <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase">
+                <!-- Accident Register -->
+                <div class="flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase">
                     <span>Accidents</span>
-                    <span class="bg-rose-500 text-white px-2 py-0.5 rounded-full font-orbitron text-xs" id="hud-accidents">0</span>
+                    <span class="bg-rose-500 text-white px-2.5 py-0.5 rounded-full font-orbitron text-xs" id="hud-accidents">0</span>
                 </div>
             </div>
         </div>
 
-        <!-- CENTER GRAPHICAL NOTIFICATIONS (Crashes, warnings, triggers) -->
+        <!-- CENTER OVERLAY FOR COUNTDOWN -->
         <div class="flex-1 flex flex-col items-center justify-center pointer-events-none">
             <div id="countdown-overlay" class="hidden text-8xl md:text-9xl font-orbitron font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-500 to-cyan-500 tracking-wider transition-all duration-300 scale-50 opacity-0"></div>
-            <div id="impact-warning" class="hidden glass-panel px-6 py-4 rounded-2xl border-2 border-red-500 animate-bounce flex items-center gap-3 text-red-500 font-bold tracking-wide text-lg">
-                <i class="fa-solid fa-triangle-exclamation text-2xl"></i> CRASH! RESPAWNING...
-            </div>
         </div>
 
-        <!-- BOTTOM RACE CONTROLS -->
-        <div id="hud-bottom" class="w-full flex justify-between items-end gap-4 transition-all duration-300 transform translate-y-24 opacity-0">
-            <!-- STEERING (Left Side Controls) -->
-            <div class="flex gap-3 interactive">
-                <button id="btn-steer-left" class="w-16 h-16 md:w-20 md:h-20 bg-slate-900/80 active:bg-cyan-500 border-2 border-cyan-500/50 rounded-2xl flex items-center justify-center text-cyan-400 text-2xl active:text-white transform active:scale-95 transition-all shadow-lg select-none">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
-                <button id="btn-steer-right" class="w-16 h-16 md:w-20 md:h-20 bg-slate-900/80 active:bg-cyan-500 border-2 border-cyan-500/50 rounded-2xl flex items-center justify-center text-cyan-400 text-2xl active:text-white transform active:scale-95 transition-all shadow-lg select-none">
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </div>
-            <!-- NITRO BOOST GAUGES (Center Visual Accent) -->
-            <div class="hidden md:flex flex-col items-center min-w-[200px]">
-                <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1 font-orbitron">Nitro Injector</span>
-                <div class="w-full bg-slate-900 h-3 rounded-full border border-cyan-500/20 overflow-hidden p-0.5">
-                    <div id="hud-nitro-bar" class="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 rounded-full w-full transition-all duration-100"></div>
+        <!-- BOTTOM CONTROLS (Ergonomic layout optimized for all touchscreens) -->
+        <div id="hud-bottom" class="w-full flex justify-between items-end gap-4 transition-all duration-300 transform translate-y-28 opacity-0">
+            <!-- STEERING CONTROL (Left Side) -->
+            <div class="flex items-center gap-4 interactive">
+                <div class="flex gap-2">
+                    <button id="btn-steer-left" class="w-16 h-16 md:w-20 md:h-20 bg-slate-900/90 active:bg-cyan-500 border-2 border-cyan-500/50 rounded-2xl flex items-center justify-center text-cyan-400 text-2xl active:text-white transform active:scale-95 transition-all shadow-lg select-none">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <button id="btn-steer-right" class="w-16 h-16 md:w-20 md:h-20 bg-slate-900/90 active:bg-cyan-500 border-2 border-cyan-500/50 rounded-2xl flex items-center justify-center text-cyan-400 text-2xl active:text-white transform active:scale-95 transition-all shadow-lg select-none">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
                 </div>
-                <span class="text-[9px] text-slate-500 mt-1">Press SPACEBAR or Touch Right Accelerator to boost</span>
+                <!-- Steering wheel rotation HUD visualizer -->
+                <div class="hidden sm:flex flex-col items-center gap-1">
+                    <div id="hud-wheel-steering" class="w-16 h-16 rounded-full border-4 border-slate-700 flex items-center justify-center relative transition-transform duration-75">
+                        <div class="absolute w-1 h-5 bg-cyan-400 top-0 rounded"></div>
+                        <div class="w-8 h-1 bg-slate-700"></div>
+                    </div>
+                    <span class="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Drive Steer</span>
+                </div>
             </div>
-            <!-- ACCELERATION & BRAKES (Right Side Controls) -->
+
+            <!-- NITRO BOOST GAUGE (Center Accent) -->
+            <div class="hidden md:flex flex-col items-center min-w-[200px]">
+                <span class="text-[9px] font-bold text-cyan-400 uppercase tracking-widest mb-1 font-orbitron">Nitro Booster</span>
+                <div class="w-full bg-slate-900 h-2.5 rounded-full border border-cyan-500/20 overflow-hidden p-0.5">
+                    <div id="hud-nitro-bar" class="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-pink-500 rounded-full w-full transition-all duration-100"></div>
+                </div>
+                <span class="text-[8px] text-slate-500 mt-1 uppercase">Hold W / GAS button to ignite exhaust flames</span>
+            </div>
+
+            <!-- ACCELERATOR & BRAKE (Right Side) -->
             <div class="flex gap-3 interactive">
-                <button id="btn-brake" class="w-16 h-16 md:w-20 md:h-20 bg-slate-900/80 active:bg-rose-600 border-2 border-rose-500/50 rounded-2xl flex items-center justify-center text-rose-500 text-2xl active:text-white transform active:scale-95 transition-all shadow-lg select-none">
-                    <i class="fa-solid fa-hand-holding-hand"></i><span class="text-xs font-bold font-orbitron block ml-1">Brake</span>
+                <button id="btn-brake" class="w-16 h-16 md:w-20 md:h-20 bg-slate-900/90 active:bg-rose-600 border-2 border-rose-500/50 rounded-2xl flex flex-col items-center justify-center text-rose-500 active:text-white transform active:scale-95 transition-all shadow-lg select-none">
+                    <i class="fa-solid fa-hand-holding-hand text-xl"></i>
+                    <span class="text-[9px] font-bold uppercase mt-1">Brake</span>
                 </button>
-                <button id="btn-accelerate" class="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-cyan-600 to-indigo-700 active:from-cyan-400 active:to-pink-500 border-2 border-cyan-400/50 rounded-2xl flex flex-col items-center justify-center text-white text-3xl transform active:scale-95 transition-all shadow-2xl select-none">
-                    <i class="fa-solid fa-gauge-high"></i>
+                <button id="btn-accelerate" class="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-cyan-600 to-indigo-700 active:from-cyan-400 active:to-pink-500 border-2 border-cyan-400/50 rounded-2xl flex flex-col items-center justify-center text-white transform active:scale-95 transition-all shadow-2xl select-none">
+                    <i class="fa-solid fa-gauge-high text-2xl"></i>
                     <span class="text-[10px] uppercase tracking-wider font-extrabold mt-1">GAS</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- MAIN MENU -->
-    <div id="main-menu" class="absolute inset-0 z-20 flex flex-col md:flex-row justify-between items-stretch p-4 md:p-8 overflow-y-auto bg-gradient-to-r from-black/95 via-black/50 to-black/95">
-        <!-- LEFT PANEL: Header, Customizer, Game Modes -->
-        <div class="w-full md:w-[420px] flex flex-col gap-5 justify-between select-none py-2">
-            <!-- App Title and Brand -->
+    <!-- MAIN GARAGE MENU -->
+    <div id="main-menu" class="absolute inset-0 z-20 flex flex-col md:flex-row justify-between items-stretch p-4 md:p-8 overflow-y-auto bg-gradient-to-r from-black/95 via-black/40 to-black/95">
+        
+        <!-- LEFT PANEL: VEHICLE CUSTOMIZATION -->
+        <div class="w-full md:w-[420px] flex flex-col gap-4 justify-between select-none py-2 z-30">
             <div class="flex flex-col">
                 <div class="flex items-center gap-3">
-                    <div class="bg-gradient-to-r from-pink-500 to-cyan-500 p-2.5 rounded-2xl neon-glow">
+                    <div class="bg-gradient-to-r from-pink-500 to-cyan-500 p-3 rounded-2xl neon-glow">
                         <i class="fa-solid fa-car-side text-2xl text-white"></i>
                     </div>
                     <div>
@@ -176,94 +190,92 @@
                         <p class="text-xs text-pink-500 tracking-widest uppercase font-bold">Elite 3D Racing & Sandbox</p>
                     </div>
                 </div>
-                <!-- Profile Stat Badge -->
+                
+                <!-- Pilot Stats Card -->
                 <div class="glass-panel p-3 rounded-xl mt-3 flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center text-slate-300">
+                        <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-650 flex items-center justify-center text-slate-300">
                             <i class="fa-solid fa-user-ninja"></i>
                         </div>
                         <div>
                             <div class="text-sm font-bold text-white flex items-center gap-1">
                                 <span>Pilot_Alpha</span>
-                                <span class="bg-pink-500 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded">LVL 4</span>
+                                <span class="bg-pink-500 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded">LVL 5</span>
                             </div>
-                            <span class="text-[11px] text-slate-400">XP Points: <strong class="text-pink-400 font-orbitron font-medium" id="user-xp">1,240</strong></span>
+                            <span class="text-[10px] text-slate-400">XP Points: <strong class="text-pink-400 font-orbitron" id="user-xp">14,250</strong></span>
                         </div>
                     </div>
                     <div class="flex flex-col items-end">
-                        <span class="text-xs text-slate-400">Coins</span>
-                        <span class="text-lg font-orbitron font-black text-amber-400" id="user-coins"><i class="fa-solid fa-coins mr-1"></i>3,450</span>
+                        <span class="text-[9px] text-slate-400 uppercase font-bold">Coins</span>
+                        <span class="text-base font-orbitron font-black text-amber-400" id="user-coins"><i class="fa-solid fa-coins mr-1"></i>25,300</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Vehicle Category Selection -->
+            <!-- Vehicle Group Selector -->
             <div class="flex flex-col gap-2">
                 <h3 class="text-xs text-slate-400 font-bold uppercase tracking-widest border-l-2 border-pink-500 pl-2">Select Vehicle Group</h3>
                 <div class="grid grid-cols-3 gap-2">
-                    <button onclick="switchCategory('wheels2')" id="cat-wheels2" class="category-btn bg-pink-500/20 border-2 border-pink-500 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-pink-500/40 transition">
+                    <button onclick="switchCategory('wheels2')" id="cat-wheels2" class="category-btn bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 transition">
                         <i class="fa-solid fa-motorcycle text-lg"></i>
                         <span class="text-[10px] font-bold">2 Wheels</span>
                     </button>
-                    <button onclick="switchCategory('wheels4')" id="cat-wheels4" class="category-btn bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-slate-850 transition">
+                    <button onclick="switchCategory('wheels4')" id="cat-wheels4" class="category-btn bg-pink-500/20 border-2 border-pink-500 p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 hover:bg-pink-500/40 transition">
                         <i class="fa-solid fa-car-sports text-lg"></i>
                         <span class="text-[10px] font-bold">4 Wheels</span>
                     </button>
-                    <button onclick="switchCategory('heavy')" id="cat-heavy" class="category-btn bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-slate-850 transition">
+                    <button onclick="switchCategory('heavy')" id="cat-heavy" class="category-btn bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 transition">
                         <i class="fa-solid fa-truck-monster text-lg"></i>
                         <span class="text-[10px] font-bold">Trucks</span>
                     </button>
                 </div>
 
-                <!-- Specific Vehicle Swiper -->
-                <div class="glass-panel p-2.5 rounded-2xl flex flex-col gap-2">
+                <!-- Swiper Box -->
+                <div class="glass-panel p-3 rounded-2xl flex flex-col gap-2">
                     <div class="flex justify-between items-center text-xs text-slate-400">
-                        <span>Available Rides</span>
-                        <span id="vehicle-count">1 of 4</span>
+                        <span>Select Your Machine</span>
+                        <span id="vehicle-count">1 of 2</span>
                     </div>
                     <div class="flex items-center justify-between gap-2">
-                        <button id="prev-vehicle" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-650 rounded-lg flex items-center justify-center text-slate-300">
+                        <button id="prev-vehicle" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300">
                             <i class="fa-solid fa-chevron-left"></i>
                         </button>
-                        <div class="flex-1 text-center">
-                            <span id="selected-vehicle-name" class="text-base font-black tracking-tight text-white font-orbitron uppercase">Racing Bike</span>
-                            <div id="vehicle-tier" class="text-[9px] text-pink-400 uppercase font-semibold">Tier A - Sports</div>
+                        <div class="flex-1 text-center py-1">
+                            <span id="selected-vehicle-name" class="text-base font-black tracking-tight text-white font-orbitron uppercase">Porsche GT3 RS</span>
+                            <div id="vehicle-tier" class="text-[9px] text-pink-400 uppercase font-semibold">Tier S - Premium Sports</div>
                         </div>
-                        <button id="next-vehicle" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-650 rounded-lg flex items-center justify-center text-slate-300">
+                        <button id="next-vehicle" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300">
                             <i class="fa-solid fa-chevron-right"></i>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Vehicle Stats -->
-            <div class="glass-panel p-3 rounded-2xl flex flex-col gap-2.5">
-                <h4 class="text-[10px] uppercase tracking-widest font-extrabold text-slate-400">Spec Sheet</h4>
-                <!-- Speed Stat -->
-                <div class="flex flex-col">
-                    <div class="flex justify-between text-xs mb-1">
+            <!-- Specs Sheets -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-2.5">
+                <h4 class="text-[10px] uppercase tracking-widest font-extrabold text-slate-400">Mechanical Specifications</h4>
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between text-xs">
                         <span class="text-slate-400">Top Speed</span>
-                        <span id="stat-speed-val" class="font-bold text-white">180 km/h</span>
+                        <span id="stat-speed-val" class="font-bold text-white">280 KM/H</span>
                     </div>
                     <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden p-px">
                         <div id="stat-speed-bar" class="bg-gradient-to-r from-pink-500 to-rose-500 h-full rounded-full w-2/3"></div>
                     </div>
                 </div>
-                <!-- Acceleration Stat -->
-                <div class="flex flex-col">
-                    <div class="flex justify-between text-xs mb-1">
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between text-xs">
                         <span class="text-slate-400">Acceleration</span>
-                        <span id="stat-accel-val" class="font-bold text-white">0-100 in 3.4s</span>
+                        <span id="stat-accel-val" class="font-bold text-white">0-100: 2.1s</span>
                     </div>
                     <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden p-px">
                         <div id="stat-accel-bar" class="bg-gradient-to-r from-cyan-500 to-indigo-500 h-full rounded-full w-3/4"></div>
                     </div>
                 </div>
-                <!-- Handling Stat -->
-                <div class="flex flex-col">
-                    <div class="flex justify-between text-xs mb-1">
-                        <span class="text-slate-400">Handling</span>
-                        <span id="stat-handling-val" class="font-bold text-white">Tight Drift</span>
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400">Handling Performance</span>
+                        <span id="stat-handling-val" class="font-bold text-white">Dynamic Stability</span>
                     </div>
                     <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden p-px">
                         <div id="stat-handling-bar" class="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full w-1/2"></div>
@@ -271,203 +283,94 @@
                 </div>
             </div>
 
-            <!-- Vehicle Styling & Upgrades panel -->
+            <!-- Paint customization -->
             <div class="glass-panel p-3 rounded-2xl flex flex-col gap-2.5">
                 <div class="flex justify-between items-center">
-                    <h4 class="text-[10px] uppercase tracking-widest font-extrabold text-slate-400">Garage Tuning</h4>
-                    <span class="text-[9px] text-amber-400 font-bold"><i class="fa-solid fa-wrench mr-1"></i>Customization</span>
+                    <h4 class="text-[10px] uppercase tracking-widest font-extrabold text-slate-400">3D Paint Studio</h4>
+                    <span class="text-[9px] text-amber-400 font-bold"><i class="fa-solid fa-wrench mr-1"></i>Tuning Active</span>
                 </div>
-                <div class="grid grid-cols-4 gap-1.5">
-                    <button onclick="tuneOption('paint')" id="tune-paint-tab" class="bg-slate-900/65 border-2 border-pink-500 p-1.5 rounded-lg text-center flex flex-col items-center gap-1 text-[9px] font-bold text-white hover:border-pink-500 transition">
-                        <i class="fa-solid fa-palette text-xs"></i> Paint
-                    </button>
-                    <button onclick="tuneOption('neon')" id="tune-neon-tab" class="bg-slate-900/60 border border-slate-800 p-1.5 rounded-lg text-center flex flex-col items-center gap-1 text-[9px] font-semibold text-slate-400 hover:border-pink-500 transition">
-                        <i class="fa-solid fa-lightbulb text-xs"></i> Neon
-                    </button>
-                    <button onclick="tuneOption('spoiler')" id="tune-spoiler-tab" class="bg-slate-900/60 border border-slate-800 p-1.5 rounded-lg text-center flex flex-col items-center gap-1 text-[9px] font-semibold text-slate-400 hover:border-pink-500 transition">
-                        <i class="fa-solid fa-angles-up text-xs"></i> Spoiler
-                    </button>
-                    <button onclick="tuneOption('exhaust')" id="tune-exhaust-tab" class="bg-slate-900/60 border border-slate-800 p-1.5 rounded-lg text-center flex flex-col items-center gap-1 text-[9px] font-semibold text-slate-400 hover:border-pink-500 transition">
-                        <i class="fa-solid fa-wind text-xs"></i> Sound
-                    </button>
-                </div>
-                <!-- Interactive Options container -->
-                <div id="tune-color-options" class="flex gap-2 justify-center py-1">
-                    <button onclick="changeVehicleColor('#ef4444')" class="w-5 h-5 rounded-full bg-red-500 border border-white/20 active:scale-95 transition"></button>
-                    <button onclick="changeVehicleColor('#3b82f6')" class="w-5 h-5 rounded-full bg-blue-500 border border-white/20 active:scale-95 transition"></button>
-                    <button onclick="changeVehicleColor('#10b981')" class="w-5 h-5 rounded-full bg-emerald-500 border border-white/20 active:scale-95 transition"></button>
-                    <button onclick="changeVehicleColor('#f59e0b')" class="w-5 h-5 rounded-full bg-amber-500 border border-white/20 active:scale-95 transition"></button>
-                    <button onclick="changeVehicleColor('#ec4899')" class="w-5 h-5 rounded-full bg-pink-500 border border-white/20 active:scale-95 transition"></button>
-                    <button onclick="changeVehicleColor('#a855f7')" class="w-5 h-5 rounded-full bg-purple-500 border border-white/20 active:scale-95 transition"></button>
+                <div class="flex gap-2 justify-center py-1">
+                    <button onclick="changeVehicleColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500 border-2 border-white/20 hover:scale-115 transition"></button>
+                    <button onclick="changeVehicleColor('#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 border-2 border-white/20 hover:scale-115 transition"></button>
+                    <button onclick="changeVehicleColor('#10b981')" class="w-6 h-6 rounded-full bg-emerald-500 border-2 border-white/20 hover:scale-115 transition"></button>
+                    <button onclick="changeVehicleColor('#eab308')" class="w-6 h-6 rounded-full bg-yellow-500 border-2 border-white/20 hover:scale-115 transition"></button>
+                    <button onclick="changeVehicleColor('#ec4899')" class="w-6 h-6 rounded-full bg-pink-500 border-2 border-white/20 hover:scale-115 transition"></button>
+                    <button onclick="changeVehicleColor('#ffffff')" class="w-6 h-6 rounded-full bg-white border-2 border-slate-400 hover:scale-115 transition"></button>
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT PANEL: Routes, Match Configuration, Play Mode Tabs & AI Integration -->
-        <div class="w-full md:w-[460px] flex flex-col gap-4 justify-between py-2 select-none">
-            <!-- MAIN MODE TABS (Single Player, Online Lobby, Endless) -->
+        <!-- RIGHT PANEL: GAME MODES, NO HESI ROUTE CHUNEY -->
+        <div class="w-full md:w-[460px] flex flex-col gap-4 justify-between py-2 select-none z-30">
+            <!-- Mode Selector -->
             <div class="glass-panel p-1.5 rounded-2xl flex gap-1 border border-pink-500/20">
-                <button onclick="selectGameMode('single')" id="mode-single" class="flex-1 py-2.5 text-center rounded-xl bg-pink-500 text-white font-extrabold text-xs tracking-wider uppercase shadow-md transition-all">
-                    <i class="fa-solid fa-gamepad mr-1"></i> Single
+                <button onclick="selectGameMode('single')" id="mode-single" class="flex-1 py-3 text-center rounded-xl bg-pink-500 text-white font-extrabold text-xs tracking-wider uppercase shadow-md transition-all">
+                    <i class="fa-solid fa-gamepad mr-1"></i> Career Race
                 </button>
-                <button onclick="selectGameMode('multiplayer')" id="mode-multiplayer" class="flex-1 py-2.5 text-center rounded-xl bg-transparent text-slate-400 hover:text-white font-bold text-xs tracking-wider uppercase transition-all">
-                    <i class="fa-solid fa-users mr-1"></i> Multi
+                <button onclick="selectGameMode('multiplayer')" id="mode-multiplayer" class="flex-1 py-3 text-center rounded-xl bg-transparent text-slate-400 hover:text-white font-bold text-xs tracking-wider uppercase transition-all">
+                    <i class="fa-solid fa-users mr-1"></i> Multi Lobby
                 </button>
-                <button onclick="selectGameMode('endless')" id="mode-endless" class="flex-1 py-2.5 text-center rounded-xl bg-transparent text-slate-400 hover:text-white font-bold text-xs tracking-wider uppercase transition-all">
+                <button onclick="selectGameMode('endless')" id="mode-endless" class="flex-1 py-3 text-center rounded-xl bg-transparent text-slate-400 hover:text-white font-bold text-xs tracking-wider uppercase transition-all">
                     <i class="fa-solid fa-road mr-1"></i> Free Ride
                 </button>
             </div>
 
-            <!-- PLAYLIST / MAP SELECTION BOX -->
+            <!-- Route Selection Panel -->
             <div id="route-panel" class="flex flex-col gap-2.5">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xs text-slate-400 font-bold uppercase tracking-widest border-l-2 border-cyan-400 pl-2">Select Route</h3>
-                    <span class="text-[10px] text-slate-500">Highway is default if skipped</span>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                    <!-- Highway Route Card -->
-                    <div onclick="selectRoute('highway')" id="route-highway" class="route-card bg-cyan-900/20 border-2 border-cyan-400 rounded-xl p-2.5 flex flex-col justify-between hover:bg-slate-800/40 cursor-pointer transition">
+                <h3 class="text-xs text-slate-400 font-bold uppercase tracking-widest border-l-2 border-cyan-400 pl-2">Select Race Track</h3>
+                <div class="grid grid-cols-2 gap-2 h-44 overflow-y-auto pr-1">
+                    <div onclick="selectRoute('tunnel')" id="route-tunnel" class="route-card bg-cyan-900/20 border-2 border-cyan-400 rounded-xl p-3 flex flex-col justify-between hover:bg-slate-800/40 cursor-pointer transition">
                         <div class="flex justify-between items-start">
-                            <span class="text-xs uppercase font-extrabold text-cyan-400">Highway</span>
-                            <span class="bg-emerald-500/10 text-emerald-400 text-[8px] px-1 rounded font-bold">EASY</span>
+                            <span class="text-xs uppercase font-extrabold text-cyan-400">Night Tunnel</span>
+                            <span class="bg-emerald-500/10 text-emerald-400 text-[8px] px-1 rounded font-bold">NO HESI</span>
                         </div>
                         <div class="text-[9px] text-slate-400 mt-2">
-                            <p><i class="fa-solid fa-road mr-1 text-slate-500"></i> Flat asphalt path</p>
-                            <p class="mt-0.5"><i class="fa-solid fa-cloud-sun mr-1 text-slate-500"></i> Clear Day</p>
+                            <p><i class="fa-solid fa-road mr-1 text-slate-500"></i> Cyberpunk highway tunnel</p>
+                            <p class="mt-0.5"><i class="fa-solid fa-bolt mr-1 text-slate-500"></i> Reflex neon</p>
                         </div>
                     </div>
-                    <!-- Mountain Route Card -->
-                    <div onclick="selectRoute('mountain')" id="route-mountain" class="route-card bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between hover:bg-slate-800/40 cursor-pointer transition">
+                    <div onclick="selectRoute('highway')" id="route-highway" class="route-card bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col justify-between hover:bg-slate-800/40 cursor-pointer transition">
                         <div class="flex justify-between items-start">
-                            <span class="text-xs uppercase font-extrabold text-slate-300">Mountain Pass</span>
-                            <span class="bg-amber-500/10 text-amber-400 text-[8px] px-1 rounded font-bold">MEDIUM</span>
+                            <span class="text-xs uppercase font-extrabold text-slate-300">Open Sky bridge</span>
+                            <span class="bg-amber-500/10 text-amber-400 text-[8px] px-1 rounded font-bold">SPEED CHALLENGE</span>
                         </div>
                         <div class="text-[9px] text-slate-400 mt-2">
-                            <p><i class="fa-solid fa-road mr-1 text-slate-500"></i> Tight winding turns</p>
-                            <p class="mt-0.5"><i class="fa-solid fa-cloud-fog mr-1 text-slate-500"></i> Dense Fog</p>
-                        </div>
-                    </div>
-                    <!-- Rainy Night Route Card -->
-                    <div onclick="selectRoute('rainy')" id="route-rainy" class="route-card bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between hover:bg-slate-800/40 cursor-pointer transition">
-                        <div class="flex justify-between items-start">
-                            <span class="text-xs uppercase font-extrabold text-slate-300">Neon Rain</span>
-                            <span class="bg-rose-500/10 text-rose-400 text-[8px] px-1 rounded font-bold">EXPERT</span>
-                        </div>
-                        <div class="text-[9px] text-slate-400 mt-2">
-                            <p><i class="fa-solid fa-road mr-1 text-slate-500"></i> Slippery wet road</p>
-                            <p class="mt-0.5"><i class="fa-solid fa-cloud-showers-heavy mr-1 text-slate-500"></i> Heavy Rain</p>
-                        </div>
-                    </div>
-                    <!-- Ocean Bridge Route Card -->
-                    <div onclick="selectRoute('ocean')" id="route-ocean" class="route-card bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between hover:bg-slate-800/40 cursor-pointer transition">
-                        <div class="flex justify-between items-start">
-                            <span class="text-xs uppercase font-extrabold text-slate-300">Ocean Bridge</span>
-                            <span class="bg-cyan-500/10 text-cyan-400 text-[8px] px-1 rounded font-bold">EASY</span>
-                        </div>
-                        <div class="text-[9px] text-slate-400 mt-2">
-                            <p><i class="fa-solid fa-road mr-1 text-slate-500"></i> Dynamic crosswinds</p>
-                            <p class="mt-0.5"><i class="fa-solid fa-sun mr-1 text-slate-500"></i> Sunset</p>
+                            <p><i class="fa-solid fa-road mr-1 text-slate-500"></i> Straight speed pass</p>
+                            <p class="mt-0.5"><i class="fa-solid fa-sun mr-1 text-slate-500"></i> twilight sunset</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- ONLINE MULTIPLAYER LOBBY -->
-            <div id="multiplayer-lobby" class="hidden glass-panel p-3.5 rounded-2xl flex flex-col gap-3">
-                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                    <span class="text-xs text-pink-400 font-extrabold uppercase tracking-wider"><i class="fa-solid fa-server mr-1"></i> Live Session Lobby</span>
-                    <span class="bg-pink-500 text-white font-orbitron text-[8px] font-extrabold px-1.5 py-0.2 rounded animate-pulse">MATCHMAKING ACTIVE</span>
-                </div>
-                <div class="flex gap-2">
-                    <div class="flex-1 bg-slate-950 p-2 rounded-xl text-center">
-                        <span class="text-[8px] text-slate-500 uppercase block mb-0.5">Session Code</span>
-                        <span class="text-lg font-bold font-orbitron text-white" id="lobby-code-display">DRX-8802</span>
-                    </div>
-                    <button onclick="generateNewLobby()" class="px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl text-xs font-bold transition">
-                        <i class="fa-solid fa-arrows-rotate mr-1"></i> Regenerate
-                    </button>
-                </div>
-                <!-- Competitors -->
-                <div class="flex flex-col gap-1 max-h-[120px] overflow-y-auto">
-                    <div class="flex items-center justify-between bg-slate-900/60 p-2 rounded-xl text-xs">
-                        <span class="text-slate-300 font-bold"><i class="fa-solid fa-circle text-[8px] text-emerald-500 mr-2 animate-pulse"></i>Pilot_Alpha (You)</span>
-                        <span class="text-slate-400">Ready</span>
-                    </div>
-                    <div class="flex items-center justify-between bg-slate-900/60 p-2 rounded-xl text-xs">
-                        <span class="text-slate-300"><i class="fa-solid fa-circle text-[8px] text-emerald-500 mr-2"></i>Speedy_X (Bot)</span>
-                        <span class="text-pink-400 font-semibold text-[10px]">Ready</span>
-                    </div>
-                    <div class="flex items-center justify-between bg-slate-900/60 p-2 rounded-xl text-xs">
-                        <span class="text-slate-300"><i class="fa-solid fa-circle text-[8px] text-emerald-500 mr-2"></i>Street_Ghost</span>
-                        <span class="text-pink-400 font-semibold text-[10px]">Ready</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- REQUIRE TARGETS SETUP DIALOGUE -->
-            <div id="target-setup" class="glass-panel p-3.5 rounded-2xl flex flex-col gap-3">
-                <h4 class="text-xs uppercase tracking-widest font-extrabold text-slate-400 flex justify-between items-center">
-                    <span><i class="fa-solid fa-bullseye mr-1 text-pink-500"></i> Race Targets Required</span>
-                    <button onclick="requestAIStrategy()" class="bg-gradient-to-r from-pink-500 to-cyan-500 text-white text-[9px] px-2 py-0.5 rounded-full font-bold hover:opacity-90 transition">
-                        <i class="fa-solid fa-brain mr-1"></i> Get AI strategy
-                    </button>
+            <!-- Target Settings Setup -->
+            <div id="target-setup" class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
+                <h4 class="text-xs uppercase tracking-widest font-extrabold text-slate-400 flex items-center gap-1">
+                    <i class="fa-solid fa-bullseye text-pink-500 animate-pulse"></i> Competitive Target
                 </h4>
-                
                 <div class="grid grid-cols-2 gap-3">
                     <div class="flex flex-col gap-1">
-                        <label class="text-[9px] uppercase text-slate-500 font-bold">Distance</label>
-                        <select id="target-distance-select" class="bg-slate-900 border border-slate-700 text-white rounded-lg p-2 text-xs font-bold outline-none focus:border-pink-500 transition">
-                            <option value="">Choose Target</option>
-                            <option value="1">1.0 Kilometer (Sprint)</option>
-                            <option value="2" selected>2.0 Kilometers (Normal)</option>
-                            <option value="5">5.0 Kilometers (Endurance)</option>
-                            <option value="10">10.0 Kilometers (Pro Marathon)</option>
+                        <label class="text-[9px] uppercase text-slate-500 font-bold">Distance Limit</label>
+                        <select id="target-distance-select" class="bg-slate-900 border border-slate-750 text-white rounded-lg p-2 text-xs font-bold outline-none focus:border-pink-500 transition">
+                            <option value="1">1.0 KM (Sprint)</option>
+                            <option value="2" selected>2.0 KM (Sprint Normal)</option>
+                            <option value="5">5.0 KM (Ultra Marathon)</option>
                         </select>
                     </div>
                     <div class="flex flex-col gap-1">
-                        <label class="text-[9px] uppercase text-slate-500 font-bold">Time Limit</label>
-                        <select id="target-time-select" class="bg-slate-900 border border-slate-700 text-white rounded-lg p-2 text-xs font-bold outline-none focus:border-pink-500 transition">
-                            <option value="">Choose Time</option>
-                            <option value="60">1 Minute (60s)</option>
-                            <option value="120" selected>2 Minutes (120s)</option>
-                            <option value="240">4 Minutes (240s)</option>
-                            <option value="480">8 Minutes (480s)</option>
+                        <label class="text-[9px] uppercase text-slate-500 font-bold">Countdown Timer</label>
+                        <select id="target-time-select" class="bg-slate-900 border border-slate-750 text-white rounded-lg p-2 text-xs font-bold outline-none focus:border-pink-500 transition">
+                            <option value="40">40 Seconds</option>
+                            <option value="80" selected>80 Seconds</option>
+                            <option value="150">150 Seconds</option>
                         </select>
                     </div>
                 </div>
-
-                <!-- AI strategy Display Panel -->
-                <div id="ai-strategy-box" class="hidden mt-2 p-2.5 bg-cyan-950/40 border border-cyan-500/30 rounded-lg text-cyan-300 text-[11px] leading-relaxed">
-                    <div class="font-bold flex items-center gap-1.5 mb-1 text-xs">
-                        <i class="fa-solid fa-microchip animate-pulse"></i> Drivixa AI Strategist:
-                    </div>
-                    <p id="ai-strategy-output">Click "Get AI strategy" to analyze optimal settings...</p>
-                </div>
-
-                <div id="target-warning" class="hidden text-rose-500 text-[11px] font-bold mt-1 text-center bg-rose-500/10 p-2 rounded-lg">
-                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> Please select target distance and time before starting.
-                </div>
             </div>
 
-            <!-- GEMINI API CO-PILOT / TUNING CHATBOT PANEL -->
-            <div class="glass-panel p-3.5 rounded-2xl flex flex-col gap-2">
-                <h4 class="text-xs uppercase tracking-widest font-extrabold text-slate-400 flex justify-between items-center">
-                    <span><i class="fa-solid fa-wand-magic-sparkles text-pink-500 mr-1 animate-pulse"></i> AI Garage Tuning Advice</span>
-                </h4>
-                <div class="flex gap-2">
-                    <input type="text" id="ai-tuning-input" placeholder="Ask AI: e.g. best color for speed? or drift tips?" class="flex-1 bg-slate-900 border border-slate-700 text-white text-xs rounded-lg p-2 outline-none focus:border-pink-500 transition">
-                    <button onclick="requestTuningAdvice()" class="bg-pink-500 hover:bg-pink-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
-                        <i class="fa-solid fa-paper-plane"></i> Ask
-                    </button>
-                </div>
-                <p id="ai-tuning-output" class="text-[10px] text-slate-400 italic hidden bg-black/40 p-2 rounded-lg border border-slate-800 mt-1"></p>
-            </div>
-
-            <!-- MAIN ACTION CALL BUTTONS -->
+            <!-- ACTION BUTTONS -->
             <div class="flex gap-3">
-                <button onclick="toggleSettingsModal()" class="w-14 h-14 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-slate-300 text-xl hover:text-white transition">
-                    <i class="fa-solid fa-cog animate-spin-slow"></i>
+                <button onclick="toggleSettingsModal()" class="w-14 h-14 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-slate-350 hover:text-white transition">
+                    <i class="fa-solid fa-cog text-xl animate-spin-slow"></i>
                 </button>
                 <button id="btn-start-game" class="flex-1 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:from-pink-400 hover:to-amber-400 text-white font-orbitron font-black text-lg tracking-wider py-4 px-6 rounded-2xl neon-glow transform hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
                     <i class="fa-solid fa-flag-checkered text-xl animate-bounce"></i> START EXPERIENCE
@@ -476,7 +379,7 @@
         </div>
     </div>
 
-    <!-- DIALOGUE MODAL: SETTINGS & PREFERENCES -->
+    <!-- SETTINGS MODAL -->
     <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
         <div class="glass-panel w-full max-w-lg rounded-3xl p-6 md:p-8 flex flex-col gap-5 border border-slate-700">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -486,111 +389,78 @@
                 </button>
             </div>
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[60vh] pr-1">
-                <!-- Audio Toggles -->
                 <div class="flex justify-between items-center p-3 bg-slate-900/60 rounded-xl">
                     <div>
-                        <span class="text-sm font-bold block">Engine & Sound FX</span>
-                        <span class="text-xs text-slate-400">Realistic Audio Synthesizer</span>
+                        <span class="text-sm font-bold block">Engine Exhaust Sounds</span>
+                        <span class="text-xs text-slate-400">Procedural 3D engine synthesizer</span>
                     </div>
                     <button onclick="toggleSetting('sound')" id="set-sound" class="w-12 h-6 rounded-full bg-pink-500 relative transition-all">
                         <span class="w-5 h-5 rounded-full bg-white absolute top-0.5 right-0.5 transition-all" id="set-sound-indicator"></span>
                     </button>
                 </div>
-                <!-- Music Toggle -->
-                <div class="flex justify-between items-center p-3 bg-slate-900/60 rounded-xl">
-                    <div>
-                        <span class="text-sm font-bold block">Music System</span>
-                        <span class="text-xs text-slate-400">Ambient Background Synths</span>
-                    </div>
-                    <button onclick="toggleSetting('music')" id="set-music" class="w-12 h-6 rounded-full bg-pink-500 relative transition-all">
-                        <span class="w-5 h-5 rounded-full bg-white absolute top-0.5 right-0.5 transition-all" id="set-music-indicator"></span>
-                    </button>
-                </div>
-                <!-- Graphics quality selection -->
-                <div class="flex justify-between items-center p-3 bg-slate-900/60 rounded-xl">
-                    <div>
-                        <span class="text-sm font-bold block">Graphics Level</span>
-                        <span class="text-xs text-slate-400">FPS optimizer / Render engine</span>
-                    </div>
-                    <select class="bg-slate-950 border border-slate-700 text-xs text-slate-300 rounded-lg p-2 font-bold outline-none" id="set-graphics">
-                        <option value="low">Optimized Performance</option>
-                        <option value="high" selected>Extreme Neon Detail (60 FPS)</option>
-                    </select>
-                </div>
-                <!-- Control layout sensitivity mapping -->
                 <div class="flex flex-col gap-2 p-3 bg-slate-900/60 rounded-xl">
                     <div class="flex justify-between">
                         <span class="text-sm font-bold">Steering Sensitivity</span>
                         <span class="text-xs text-pink-400 font-bold" id="sens-val">75%</span>
                     </div>
-                    <input type="range" min="10" max="100" value="75" id="set-sensitivity" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500">
+                    <input type="range" min="30" max="150" value="75" id="set-sensitivity" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500">
                 </div>
-                <!-- Camera Modes Option selection -->
                 <div class="flex justify-between items-center p-3 bg-slate-900/60 rounded-xl">
                     <div>
-                        <span class="text-sm font-bold block">Camera Angle Preference</span>
-                        <span class="text-xs text-slate-400">Change while racing as well</span>
+                        <span class="text-sm font-bold block">Camera Angle</span>
+                        <span class="text-xs text-slate-400">Adjust dynamic game viewport</span>
                     </div>
                     <select class="bg-slate-950 border border-slate-700 text-xs text-slate-300 rounded-lg p-2 font-bold outline-none" id="set-camera" onchange="switchCameraMode(this.value)">
                         <option value="third-person">Third Person View</option>
-                        <option value="driver">Driver Cockpit</option>
-                        <option value="top">Top Down Arcade</option>
-                        <option value="cinematic">Cinematic Pan</option>
+                        <option value="driver">Cockpit View</option>
+                        <option value="top">Top Down View</option>
                     </select>
                 </div>
             </div>
-            <button onclick="toggleSettingsModal()" class="w-full py-3 bg-slate-800 border border-slate-700 hover:bg-slate-705 text-slate-200 text-sm font-extrabold rounded-xl transition">
+            <button onclick="toggleSettingsModal()" class="w-full py-3 bg-slate-800 border border-slate-700 hover:bg-slate-750 text-slate-200 text-sm font-extrabold rounded-xl transition">
                 SAVE & CLOSE
             </button>
         </div>
     </div>
 
-    <!-- WIN / LOSE RESULT PANEL (End Game Overlay) -->
+    <!-- POST-GAME OVERLAY -->
     <div id="game-end-panel" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-lg p-4">
         <div class="glass-panel w-full max-w-lg rounded-3xl p-6 md:p-8 flex flex-col gap-5 border-2 border-pink-500/40 transform scale-95 transition-all">
             <div class="text-center">
                 <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-pink-500 to-amber-500 flex items-center justify-center text-white text-4xl mb-4 animate-bounce" id="end-medal-icon">
                     <i class="fa-solid fa-trophy"></i>
                 </div>
-                <h2 id="end-status-heading" class="text-4xl font-extrabold font-orbitron text-white">MISSION COMPLETED</h2>
+                <h2 id="end-status-heading" class="text-4xl font-extrabold font-orbitron text-white">RACE OVER</h2>
                 <p id="end-status-subheading" class="text-sm text-pink-400 mt-1 uppercase font-bold tracking-widest">You dominated the roads</p>
             </div>
             <div class="grid grid-cols-2 gap-3 bg-slate-950/80 p-4 rounded-2xl border border-slate-850">
                 <div class="flex flex-col">
-                    <span class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Total Time Taken</span>
+                    <span class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Total Time Elapsed</span>
                     <span id="end-stat-time" class="text-xl font-orbitron font-extrabold text-white">01:45</span>
                 </div>
                 <div class="flex flex-col">
                     <span class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Max Speed Peak</span>
-                    <span id="end-stat-speed" class="text-xl font-orbitron font-extrabold text-white">125 KM/H</span>
+                    <span id="end-stat-speed" class="text-xl font-orbitron font-extrabold text-white">210 KM/H</span>
                 </div>
                 <div class="flex flex-col">
-                    <span class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Accident Register</span>
+                    <span class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Crashes registered</span>
                     <span id="end-stat-accidents" class="text-xl font-orbitron font-extrabold text-rose-400">0 Crashes</span>
                 </div>
                 <div class="flex flex-col">
-                    <span class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Final Damage</span>
+                    <span class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Final Car Damage</span>
                     <span id="end-stat-damage" class="text-xl font-orbitron font-extrabold text-emerald-400">0% Damage</span>
                 </div>
             </div>
 
-            <!-- AI Telemetry Commentator Report -->
-            <div id="ai-telemetry-box" class="p-3 bg-indigo-950/50 border border-indigo-500/30 rounded-2xl">
-                <div class="text-[10px] uppercase font-bold text-indigo-400 tracking-wider flex items-center gap-1.5 mb-1">
-                    <i class="fa-solid fa-robot animate-bounce"></i> Drivixa AI Telemetry Analyst:
-                </div>
-                <p id="ai-telemetry-report" class="text-xs text-slate-350 leading-relaxed italic">Analyzing race parameters for feedback...</p>
-            </div>
-
-            <!-- Earned Coins Reward Panel -->
+            <!-- Reward Coins -->
             <div class="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl text-amber-400">
-                <span class="text-xs font-bold uppercase tracking-wider"><i class="fa-solid fa-gift mr-1 text-sm animate-pulse"></i> Bonus Challenge Coins</span>
+                <span class="text-xs font-bold uppercase tracking-wider"><i class="fa-solid fa-gift mr-1 text-sm animate-pulse"></i> Pilot Reward Coins</span>
                 <span class="text-lg font-orbitron font-black text-amber-300" id="end-stat-coins">+150 COINS</span>
             </div>
             
             <div class="flex flex-col gap-2">
                 <button onclick="shareStats()" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold rounded-xl transition text-xs tracking-wider uppercase flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-share-nodes"></i> Share Live Pilot Performance
+                    <i class="fa-solid fa-share-nodes"></i> Copy performance data
                 </button>
                 <div class="flex gap-2">
                     <button onclick="backToMainMenu()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-750 text-slate-350 font-extrabold rounded-xl transition text-xs tracking-wider uppercase">
@@ -604,21 +474,18 @@
         </div>
     </div>
 
-    <!-- Shared UI Clipboard Dialog Popup Alert -->
+    <!-- Toast clipboard popup -->
     <div id="toast-message" class="hidden fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50 glass-panel border border-cyan-500 px-6 py-3 rounded-full text-xs text-cyan-400 font-bold tracking-wide transition-all scale-95 opacity-0">
-        <i class="fa-solid fa-copy mr-1"></i> Performance stats copied to clipboard!
+        <i class="fa-solid fa-copy mr-1"></i> Stats copied to clipboard!
     </div>
 
     <script>
-        // Audio engine using standard HTML5 Audio Context
+        // Web Audio Synthesizer Engine
         let audioContext = null;
         let engineOscillator = null;
         let engineGain = null;
-        let ambientSynth = null;
         const gameSettings = {
             sound: true,
-            music: true,
-            graphics: 'high',
             sensitivity: 0.75,
             cameraMode: 'third-person'
         };
@@ -642,25 +509,22 @@
                 if (!engineOscillator) {
                     engineOscillator = audioContext.createOscillator();
                     engineGain = audioContext.createGain();
-                    
                     engineOscillator.type = 'sawtooth';
-                    engineOscillator.frequency.value = 40 + (speedRatio * 150);
+                    engineOscillator.frequency.value = 50 + (speedRatio * 160);
                     
                     const filter = audioContext.createBiquadFilter();
                     filter.type = 'lowpass';
-                    filter.frequency.value = 180 + (speedRatio * 600);
+                    filter.frequency.value = 150 + (speedRatio * 550);
+                    
                     engineOscillator.connect(filter);
                     filter.connect(engineGain);
                     engineGain.connect(audioContext.destination);
-                    
                     engineOscillator.start();
-                    engineGain.gain.setValueAtTime(0.08, audioContext.currentTime);
+                    engineGain.gain.setValueAtTime(0.07, audioContext.currentTime);
                 } else {
-                    engineOscillator.frequency.setTargetAtTime(45 + (speedRatio * 160), audioContext.currentTime, 0.1);
+                    engineOscillator.frequency.setTargetAtTime(50 + (speedRatio * 180), audioContext.currentTime, 0.08);
                 }
-            } catch (e) {
-                console.error("Audio Synthesis Interrupted", e);
-            }
+            } catch (e) {}
         }
 
         function stopEngineSound() {
@@ -680,14 +544,14 @@
                 const osc = audioContext.createOscillator();
                 const gain = audioContext.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(2200, audioContext.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.3);
+                osc.frequency.setValueAtTime(1900, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(110, audioContext.currentTime + 0.25);
                 gain.gain.setValueAtTime(0.02, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.25);
                 osc.connect(gain);
                 gain.connect(audioContext.destination);
                 osc.start();
-                osc.stop(audioContext.currentTime + 0.35);
+                osc.stop(audioContext.currentTime + 0.28);
             } catch (e) {}
         }
 
@@ -705,7 +569,7 @@
                 noiseNode.buffer = buffer;
                 const noiseFilter = audioContext.createBiquadFilter();
                 noiseFilter.type = 'bandpass';
-                noiseFilter.frequency.value = 300;
+                noiseFilter.frequency.value = 260;
                 const gainNode = audioContext.createGain();
                 gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
@@ -724,13 +588,13 @@
                 const osc = audioContext.createOscillator();
                 const gain = audioContext.createGain();
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(800, audioContext.currentTime);
-                gain.gain.setValueAtTime(0.05, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.15);
+                osc.frequency.setValueAtTime(550, audioContext.currentTime);
+                gain.gain.setValueAtTime(0.04, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.12);
                 osc.connect(gain);
                 gain.connect(audioContext.destination);
                 osc.start();
-                osc.stop(audioContext.currentTime + 0.2);
+                osc.stop(audioContext.currentTime + 0.15);
             } catch(e) {}
         }
 
@@ -741,7 +605,7 @@
                 const osc = audioContext.createOscillator();
                 const gain = audioContext.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, audioContext.currentTime);
+                osc.frequency.setValueAtTime(500, audioContext.currentTime);
                 gain.gain.setValueAtTime(0.03, audioContext.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
                 osc.connect(gain);
@@ -753,146 +617,76 @@
     </script>
 
     <script>
-        // Comprehensive list of Sports Bikes, Sports Cars and Heavy Duty Vehicles
+        // Highly detailed dynamic specifications for our 3D Vehicles
         const VEHICLE_DATA = {
             wheels2: [
                 {
-                    name: "Racing Bike",
-                    tier: "Tier A - Pro",
-                    speed: 160,
-                    acceleration: "0-100: 3.1s",
-                    handling: "Sharp Turn Edge",
-                    color: "#ec4899",
-                    scale: [0.7, 0.7, 1.4],
-                    type: "bike"
-                },
-                {
-                    name: "Super Bike",
+                    name: "Ducati Superbike",
                     tier: "Tier S - Racing Elite",
-                    speed: 210,
+                    speed: 240,
                     acceleration: "0-100: 2.3s",
-                    handling: "Aggressive Lean",
+                    handling: "Slick Lean Edge",
                     color: "#f43f5e",
-                    scale: [0.65, 0.75, 1.5],
+                    scale: [0.72, 0.72, 1.4],
                     type: "bike"
                 },
                 {
-                    name: "Dirt Bike",
-                    tier: "Tier B - Offroad",
-                    speed: 130,
-                    acceleration: "0-100: 4.2s",
-                    handling: "Mud Sliding Control",
+                    name: "Dirt Trail Spec",
+                    tier: "Tier B - Offroad Run",
+                    speed: 160,
+                    acceleration: "0-100: 3.9s",
+                    handling: "Slippery Mud Control",
                     color: "#10b981",
-                    scale: [0.6, 0.8, 1.3],
-                    type: "bike"
-                },
-                {
-                    name: "Street Bike",
-                    tier: "Tier C - Standard",
-                    speed: 120,
-                    acceleration: "0-100: 5.0s",
-                    handling: "High Agility Maneuvering",
-                    color: "#f59e0b",
-                    scale: [0.65, 0.65, 1.35],
+                    scale: [0.7, 0.8, 1.35],
                     type: "bike"
                 }
             ],
             wheels4: [
                 {
-                    name: "Lamborghini Style",
-                    tier: "Tier S+ - hypercar",
-                    speed: 220,
+                    name: "Porsche GT3 Style",
+                    tier: "Tier S+ - Hypercar",
+                    speed: 280,
                     acceleration: "0-100: 2.1s",
-                    handling: "Aero Track Static",
-                    color: "#eab308",
-                    scale: [1.3, 0.7, 2.1],
-                    type: "car"
-                },
-                {
-                    name: "Ferrari Style",
-                    tier: "Tier S - Racing Master",
-                    speed: 200,
-                    acceleration: "0-100: 2.6s",
-                    handling: "Formula Precision",
+                    handling: "Aero Static Track",
                     color: "#ef4444",
-                    scale: [1.25, 0.75, 2.05],
+                    scale: [1.35, 0.72, 2.2],
                     type: "car"
                 },
                 {
-                    name: "Drift Car",
-                    tier: "Tier B - JDM Tuning",
-                    speed: 155,
-                    acceleration: "0-100: 3.8s",
-                    handling: "Loose Slide Active",
+                    name: "GTR Drift Spec",
+                    tier: "Tier S - JDM Classic",
+                    speed: 230,
+                    acceleration: "0-100: 2.8s",
+                    handling: "Heavy Drift Swing",
                     color: "#3b82f6",
-                    scale: [1.2, 0.8, 1.95],
-                    type: "car"
-                },
-                {
-                    name: "Muscle Car",
-                    tier: "Tier A - Classic V8",
-                    speed: 170,
-                    acceleration: "0-100: 3.5s",
-                    handling: "Heavy Rear Breakout",
-                    color: "#1e1b4b",
-                    scale: [1.35, 0.85, 2.2],
+                    scale: [1.32, 0.75, 2.1],
                     type: "car"
                 }
             ],
             heavy: [
                 {
-                    name: "Cargo Truck",
+                    name: "Monster Cargo Truck",
                     tier: "Heavy Spec - Logistics",
-                    speed: 110,
-                    acceleration: "0-100: 8.5s",
-                    handling: "Slow Weight Sway",
-                    color: "#475569",
-                    scale: [1.5, 1.6, 3.2],
-                    type: "truck"
-                },
-                {
-                    name: "Monster Truck",
-                    tier: "Monster Spec - Smash",
-                    speed: 125,
-                    acceleration: "0-100: 5.5s",
-                    handling: "Bouncy Springs Offroad",
-                    color: "#d97706",
-                    scale: [1.7, 1.8, 2.5],
-                    type: "truck"
-                },
-                {
-                    name: "Army Truck",
-                    tier: "Military - Hardened Armoured",
-                    speed: 105,
-                    acceleration: "0-100: 9.0s",
-                    handling: "Rigid Bulletproof Base",
-                    color: "#14532d",
-                    scale: [1.6, 1.7, 3.1],
-                    type: "truck"
-                },
-                {
-                    name: "Offroad Rig",
-                    tier: "Heavy - 4x4 Trailblazer",
                     speed: 130,
-                    acceleration: "0-100: 4.8s",
-                    handling: "Flexible High Grounding",
-                    color: "#a21caf",
-                    scale: [1.4, 1.3, 2.4],
+                    acceleration: "0-100: 5.5s",
+                    handling: "Suspension Weight Sway",
+                    color: "#f59e0b",
+                    scale: [1.55, 1.5, 2.9],
                     type: "truck"
                 }
             ]
         };
 
-        let activeCategory = 'wheels2';
+        // Fix default Category highlight sync bug:
+        // Set default category variables explicitly to wheels4 (Cars) to match selection screen design
+        let activeCategory = 'wheels4'; 
         let activeVehicleIndex = 0;
-        let activeRoute = 'highway';
+        let activeRoute = 'tunnel';
         let gameMode = 'single';
 
         function switchCategory(cat) {
             activeCategory = cat;
             activeVehicleIndex = 0;
-            
-            // Toggle selected styling classes on categories
             document.querySelectorAll('.category-btn').forEach(btn => {
                 btn.classList.remove('bg-pink-500/20', 'border-pink-500');
                 btn.classList.add('bg-slate-900', 'border-slate-800');
@@ -902,7 +696,6 @@
                 activeBtn.classList.add('bg-pink-500/20', 'border-pink-500');
                 activeBtn.classList.remove('bg-slate-900', 'border-slate-800');
             }
-            
             updateVehicleUI();
             recreateThreeVehicle();
             playTickSound();
@@ -916,21 +709,19 @@
             document.getElementById('selected-vehicle-name').innerText = v.name;
             document.getElementById('vehicle-tier').innerText = v.tier;
             
-            // Map speeds to percentages for visual stats representation
-            const speedPercent = Math.min(100, (v.speed / 240) * 100);
+            const speedPercent = Math.min(100, (v.speed / 280) * 100);
             document.getElementById('stat-speed-val').innerText = `${v.speed} KM/H`;
             document.getElementById('stat-speed-bar').style.width = `${speedPercent}%`;
             document.getElementById('stat-accel-val').innerText = v.acceleration;
             
-            const accelPercent = v.name.includes("Super Bike") || v.name.includes("Lamborghini") ? 95 : 60;
+            const accelPercent = v.name.includes("Porsche") || v.name.includes("G1") || v.name.includes("Ducati") ? 95 : 65;
             document.getElementById('stat-accel-bar').style.width = `${accelPercent}%`;
             document.getElementById('stat-handling-val').innerText = v.handling;
             
-            const handPercent = v.handling.includes("Formula") || v.handling.includes("Sharp") ? 90 : 55;
+            const handPercent = v.handling.includes("Aero") || v.handling.includes("Lean") ? 90 : 55;
             document.getElementById('stat-handling-bar').style.width = `${handPercent}%`;
         }
 
-        // Swiper listener binds
         document.getElementById('prev-vehicle').addEventListener('click', () => {
             const list = VEHICLE_DATA[activeCategory];
             activeVehicleIndex = (activeVehicleIndex - 1 + list.length) % list.length;
@@ -953,14 +744,12 @@
             document.querySelectorAll('.route-card').forEach(card => {
                 card.classList.remove('bg-cyan-900/20', 'border-cyan-400');
                 card.classList.add('bg-slate-900', 'border-slate-800');
-                
                 const span = card.querySelector('span');
                 if (span) {
                     span.classList.remove('text-cyan-400');
                     span.classList.add('text-slate-300');
                 }
             });
-            
             const selectedCard = document.getElementById(`route-${route}`);
             if (selectedCard) {
                 selectedCard.classList.remove('bg-slate-900', 'border-slate-800');
@@ -977,14 +766,12 @@
         function selectGameMode(mode) {
             gameMode = mode;
             document.querySelectorAll('[id^="mode-"]').forEach(btn => {
-                btn.className = "flex-1 py-2.5 text-center rounded-xl bg-transparent text-slate-400 hover:text-white font-bold text-xs tracking-wider uppercase transition-all";
+                btn.className = "flex-1 py-3 text-center rounded-xl bg-transparent text-slate-400 hover:text-white font-bold text-xs tracking-wider uppercase transition-all";
             });
-            
             const activeBtn = document.getElementById(`mode-${mode}`);
             if (activeBtn) {
-                activeBtn.className = "flex-1 py-2.5 text-center rounded-xl bg-pink-500 text-white font-extrabold text-xs tracking-wider uppercase shadow-md transition-all";
+                activeBtn.className = "flex-1 py-3 text-center rounded-xl bg-pink-500 text-white font-extrabold text-xs tracking-wider uppercase shadow-md transition-all";
             }
-            
             if (mode === 'multiplayer') {
                 document.getElementById('multiplayer-lobby').classList.remove('hidden');
                 document.getElementById('target-setup').classList.add('hidden');
@@ -1006,7 +793,6 @@
             playTickSound();
         }
 
-        // Modal Control logic
         function toggleSettingsModal() {
             const modal = document.getElementById('settings-modal');
             modal.classList.toggle('hidden');
@@ -1017,73 +803,55 @@
             gameSettings[type] = !gameSettings[type];
             const indicator = document.getElementById(`set-${type}-indicator`);
             const btn = document.getElementById(`set-${type}`);
-            
             if (gameSettings[type]) {
-                if (btn) {
-                    btn.classList.add('bg-pink-500');
-                    btn.classList.remove('bg-slate-700');
-                }
-                if (indicator) {
-                    indicator.style.right = '0.125rem';
-                    indicator.style.left = 'auto';
-                }
+                if (btn) { btn.classList.add('bg-pink-500'); btn.classList.remove('bg-slate-700'); }
+                if (indicator) { indicator.style.right = '0.125rem'; indicator.style.left = 'auto'; }
             } else {
-                if (btn) {
-                    btn.classList.remove('bg-pink-500');
-                    btn.classList.add('bg-slate-700');
-                }
-                if (indicator) {
-                    indicator.style.left = '0.125rem';
-                    indicator.style.right = 'auto';
-                }
-            }
-            playTickSound();
-        }
-
-        function tuneOption(option) {
-            document.querySelectorAll('[id^="tune-"]').forEach(btn => {
-                btn.className = "bg-slate-900/60 border border-slate-800 p-1.5 rounded-lg text-center flex flex-col items-center gap-1 text-[9px] font-semibold text-slate-400 hover:border-pink-500 transition";
-            });
-            const selectedTab = document.getElementById(`tune-${option}-tab`);
-            if (selectedTab) {
-                selectedTab.className = "bg-slate-900/60 border-2 border-pink-500 p-1.5 rounded-lg text-center flex flex-col items-center gap-1 text-[9px] font-bold text-white transition";
+                if (btn) { btn.classList.remove('bg-pink-500'); btn.classList.add('bg-slate-700'); }
+                if (indicator) { indicator.style.left = '0.125rem'; indicator.style.right = 'auto'; }
             }
             playTickSound();
         }
     </script>
 
     <script>
-        // State variables for Three.js Simulation
+        // ThreeJS Core Viewport Setup
         let scene, camera, renderer;
         let roadSegments = [];
         let playerVehicle = null;
         let trafficCars = [];
-        let environmentObjects = [];
         let activeKeys = {};
         let isRacing = false;
         let cameraView = 'third-person';
 
-        // Velocity / Control Physics values
+        // dynamic mechanical components
+        let steerableMeshGroup = [];
+        let rotatingWheels = [];
+        let exhaustFlames = []; 
+        let sparkParticles = null;
+
+        // Physics variables
         let carVelocity = 0;
-        let lanePosition = 0; // Ranges from -3.0 to 3.0 (representing 3 lanes)
-        let maxSpeed = 120; // Default highway speed cap
+        let lanePosition = 0; // x axis ranges [-7.8 to 7.8]
+        let maxSpeed = 280;
         let stats = {
-            distanceLeft: 2000, // meters
+            distanceLeft: 2000,
             elapsedTime: 0,
             damage: 0,
             accidents: 0,
             highSpeed: 0,
             targetDistance: 2000,
-            timeLimit: 120
+            timeLimit: 80
         };
         let driftAngle = 0;
 
-        // Core Init Sequence
         function initThreeJS() {
             const container = document.getElementById('three-canvas-container');
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x0a0a0f, 0.012);
-            camera = new THREE.PerspectiveCamera(65, container.clientWidth / container.clientHeight, 0.1, 1000);
+            
+            setEnvironmentSkyColor();
+
+            camera = new THREE.PerspectiveCamera(62, container.clientWidth / container.clientHeight, 0.1, 1000);
             
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             renderer.setSize(container.clientWidth, container.clientHeight);
@@ -1093,255 +861,624 @@
             container.appendChild(renderer.domElement);
 
             // Lighting System
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
             scene.add(ambientLight);
-            const mainLight = new THREE.DirectionalLight(0xff00ff, 0.8);
-            mainLight.position.set(20, 40, -10);
+            
+            // Neon pink / cyan highway directional lights
+            const mainLight = new THREE.DirectionalLight(0xff00bb, 0.85);
+            mainLight.position.set(20, 50, -10);
             scene.add(mainLight);
 
-            // Cyberpunk style ground lights
-            const secondaryLight = new THREE.DirectionalLight(0x00ffff, 0.6);
-            secondaryLight.position.set(-20, 20, 50);
-            scene.add(secondaryLight);
+            const neonAmbientLight = new THREE.DirectionalLight(0x00f2ff, 0.6);
+            neonAmbientLight.position.set(-20, 30, 40);
+            scene.add(neonAmbientLight);
 
             buildRoadSystem();
             recreateThreeVehicle();
             spawnTraffic();
+            buildSparksSystem();
             animateLoop();
         }
 
-        // Creating beautiful high-fidelity procedural road geometry
+        function setEnvironmentSkyColor() {
+            scene.background = new THREE.Color(0x010103);
+            if (activeRoute === 'tunnel') {
+                scene.fog = new THREE.FogExp2(0x010103, 0.02);
+            } else {
+                scene.background = new THREE.Color(0x050410);
+                scene.fog = new THREE.FogExp2(0x050410, 0.012);
+            }
+        }
+
+        // Procedural endless highway design
         function buildRoadSystem() {
-            // Clean old segments first
             roadSegments.forEach(s => scene.remove(s));
             roadSegments = [];
 
-            const segmentCount = 10;
+            const segmentCount = 14;
             const segmentLength = 40;
+            
             for (let i = 0; i < segmentCount; i++) {
                 const zPos = -i * segmentLength;
                 const group = new THREE.Group();
                 group.position.set(0, 0, zPos);
 
-                // Asphalt Mesh
-                const roadGeo = new THREE.PlaneGeometry(16, segmentLength);
+                // Asphalt Road base mesh
+                const roadGeo = new THREE.PlaneGeometry(20, segmentLength);
                 const roadMat = new THREE.MeshStandardMaterial({
-                     color: 0x11111a,
-                     roughness: 0.8,
-                     metalness: 0.2
+                     color: 0x111116,
+                     roughness: 0.9,
+                     metalness: 0.1
                 });
                 const roadMesh = new THREE.Mesh(roadGeo, roadMat);
                 roadMesh.rotation.x = -Math.PI / 2;
                 group.add(roadMesh);
 
-                // Side Curbs (Neon Glowing Lines on both shoulders)
-                const lineLeftGeo = new THREE.BoxGeometry(0.3, 0.1, segmentLength);
-                const lineLeftMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-                const lineLeft = new THREE.Mesh(lineLeftGeo, lineLeftMat);
-                lineLeft.position.set(-8, 0.05, 0);
-                group.add(lineLeft);
+                // Neon glowing shoulder lines
+                const curbLGeo = new THREE.BoxGeometry(0.3, 0.2, segmentLength);
+                const curbLMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+                const curbL = new THREE.Mesh(curbLGeo, curbLMat);
+                curbL.position.set(-10, 0.1, 0);
+                group.add(curbL);
 
-                const lineRightGeo = new THREE.BoxGeometry(0.3, 0.1, segmentLength);
-                const lineRightMat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
-                const lineRight = new THREE.Mesh(lineRightGeo, lineRightMat);
-                lineRight.position.set(8, 0.05, 0);
-                group.add(lineRight);
+                const curbRGeo = new THREE.BoxGeometry(0.3, 0.2, segmentLength);
+                const curbRMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+                const curbR = new THREE.Mesh(curbRGeo, curbRMat);
+                curbR.position.set(10, 0.1, 0);
+                group.add(curbR);
 
-                // Central Dashed lane dividers
+                // Central lane dashes
                 for (let j = -segmentLength/2; j < segmentLength/2; j += 8) {
-                    const dividerGeo = new THREE.PlaneGeometry(0.15, 3);
-                    const dividerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                    const divider = new THREE.Mesh(dividerGeo, dividerMat);
-                    divider.rotation.x = -Math.PI / 2;
-                    divider.position.set(-2.6, 0.01, j);
-                    group.add(divider);
+                    const lineGeo = new THREE.PlaneGeometry(0.2, 3.5);
+                    const lineMat = new THREE.MeshBasicMaterial({ color: 0x88888c });
+                    
+                    const markerLeft = new THREE.Mesh(lineGeo, lineMat);
+                    markerLeft.rotation.x = -Math.PI / 2;
+                    markerLeft.position.set(-3.3, 0.01, j);
+                    group.add(markerLeft);
 
-                    const divider2 = divider.clone();
-                    divider2.position.x = 2.6;
-                    group.add(divider2);
+                    const markerRight = markerLeft.clone();
+                    markerRight.position.x = 3.3;
+                    group.add(markerRight);
                 }
 
-                // Procedural Cyberpunk architecture flanking highway sides
-                const towerHeight = 15 + Math.random() * 25;
-                const towerGeo = new THREE.BoxGeometry(10, towerHeight, 10);
-                const towerMat = new THREE.MeshStandardMaterial({
-                    color: 0x07070d,
-                    roughness: 0.9,
-                    metalness: 0.1,
-                    wireframe: false
-                });
-                const towerL = new THREE.Mesh(towerGeo, towerMat);
-                towerL.position.set(-20 - Math.random() * 5, towerHeight/2, 0);
-                group.add(towerL);
+                // If Night Tunnel route is active, add glowing tunnel arches
+                if (activeRoute === 'tunnel') {
+                    const archGeo = new THREE.CylinderGeometry(10, 10, segmentLength, 12, 1, true, -Math.PI/2, Math.PI);
+                    const archMat = new THREE.MeshStandardMaterial({
+                        color: 0x121217,
+                        roughness: 0.8,
+                        metalness: 0.2,
+                        side: THREE.DoubleSide
+                    });
+                    const arch = new THREE.Mesh(archGeo, archMat);
+                    arch.rotation.x = -Math.PI/2;
+                    arch.position.set(0, 0, 0);
+                    group.add(arch);
 
-                const towerR = new THREE.Mesh(towerGeo, towerMat);
-                towerR.position.set(20 + Math.random() * 5, towerHeight/2, 0);
-                group.add(towerR);
+                    // Central neon roof lines
+                    const roofLightGeo = new THREE.BoxGeometry(0.15, 0.05, segmentLength);
+                    const roofLightMat = new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0x00ff88 : 0x00f2ff });
+                    const roofLight = new THREE.Mesh(roofLightGeo, roofLightMat);
+                    roofLight.position.set(0, 9.9, 0);
+                    group.add(roofLight);
+                } else {
+                    // Open City Sky Towers
+                    const towerHeight = 20 + Math.random() * 40;
+                    const towerGeo = new THREE.BoxGeometry(10, towerHeight, 10);
+                    const towerMat = new THREE.MeshStandardMaterial({ color: 0x05050c, roughness: 0.9 });
+                    
+                    const skyscraperL = new THREE.Mesh(towerGeo, towerMat);
+                    skyscraperL.position.set(-25 - Math.random() * 5, towerHeight/2, 0);
+                    group.add(skyscraperL);
 
-                // Tiny neon strip indicators on towers for cyber realism
-                const neonStripGeo = new THREE.BoxGeometry(0.2, towerHeight, 0.2);
-                const neonStripMat = new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0x00ffff : 0xff00ff });
-                
-                const stripL = new THREE.Mesh(neonStripGeo, neonStripMat);
-                stripL.position.set(-14.8, towerHeight/2, 0);
-                group.add(stripL);
-
-                const stripR = new THREE.Mesh(neonStripGeo, neonStripMat);
-                stripR.position.set(14.8, towerHeight/2, 0);
-                group.add(stripR);
+                    const skyscraperR = skyscraperL.clone();
+                    skyscraperR.position.x = 25 + Math.random() * 5;
+                    group.add(skyscraperR);
+                }
 
                 scene.add(group);
                 roadSegments.push(group);
             }
         }
+
+        // Collision sparks
+        function buildSparksSystem() {
+            const particleCount = 35;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = [];
+
+            for (let i = 0; i < particleCount; i++) {
+                positions[i*3] = 0;
+                positions[i*3+1] = 0;
+                positions[i*3+2] = 0;
+                velocities.push({
+                    x: (Math.random() - 0.5) * 12,
+                    y: Math.random() * 10,
+                    z: (Math.random() - 0.5) * 12
+                });
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const material = new THREE.PointsMaterial({
+                color: 0xff4400,
+                size: 0.3,
+                transparent: true,
+                opacity: 0
+            });
+
+            sparkParticles = new THREE.Points(geometry, material);
+            sparkParticles.velocities = velocities;
+            scene.add(sparkParticles);
+        }
+
+        function triggerCollisionSparks(originX, originY, originZ) {
+            const posAttr = sparkParticles.geometry.attributes.position;
+            const count = posAttr.count;
+            sparkParticles.material.opacity = 1.0;
+
+            for (let i = 0; i < count; i++) {
+                posAttr.setXYZ(i, originX, originY + 0.3, originZ);
+            }
+            posAttr.needsUpdate = true;
+        }
+
+        function updateSparks(deltaTime) {
+            if (!sparkParticles || sparkParticles.material.opacity <= 0) return;
+            
+            const posAttr = sparkParticles.geometry.attributes.position;
+            const count = posAttr.count;
+            sparkParticles.material.opacity -= deltaTime * 2.5;
+
+            for (let i = 0; i < count; i++) {
+                let px = posAttr.getX(i);
+                let py = posAttr.getY(i);
+                let pz = posAttr.getZ(i);
+
+                px += sparkParticles.velocities[i].x * deltaTime;
+                py += sparkParticles.velocities[i].y * deltaTime;
+                pz += sparkParticles.velocities[i].z * deltaTime;
+
+                sparkParticles.velocities[i].y -= 20 * deltaTime;
+
+                posAttr.setXYZ(i, px, py, pz);
+            }
+            posAttr.needsUpdate = true;
+        }
     </script>
 
     <script>
-        // Building Procedural Vehicles to avoid broken image/mesh URLs
+        // High fidelity procedural vehicle generator with realistic elements (No Dummy boxes!)
         function recreateThreeVehicle() {
             if (playerVehicle) {
                 scene.remove(playerVehicle);
             }
+            steerableMeshGroup = [];
+            rotatingWheels = [];
+            exhaustFlames = [];
+
             const vehicles = VEHICLE_DATA[activeCategory];
             const vSpec = vehicles[activeVehicleIndex];
-            
+            maxSpeed = vSpec.speed;
+
             playerVehicle = new THREE.Group();
             playerVehicle.position.set(0, 0.4, 0);
 
-            // Core Chassis / Body of Vehicle
-            const bodyGeo = new THREE.BoxGeometry(1.2, 0.5, 2.6);
-            const bodyMat = new THREE.MeshStandardMaterial({
-                 color: new THREE.Color(vSpec.color),
-                 roughness: 0.1,
-                 metalness: 0.8
-             });
-            const mainBody = new THREE.Mesh(bodyGeo, bodyMat);
-            mainBody.castShadow = true;
-            playerVehicle.add(mainBody);
-
-            // Cabin Windshield
-            const cabGeo = new THREE.BoxGeometry(1.0, 0.4, 1.2);
-            const cabMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0, metalness: 1 });
-            const cabin = new THREE.Mesh(cabGeo, cabMat);
-            cabin.position.set(0, 0.4, -0.2);
-            playerVehicle.add(cabin);
-
-            // Cyber spoilers / wings for supercar aero appearance
-            if (vSpec.type === 'car') {
-                const spoilerGeo = new THREE.BoxGeometry(1.4, 0.15, 0.3);
-                const spoilerMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
-                const spoiler = new THREE.Mesh(spoilerGeo, spoilerMat);
-                spoiler.position.set(0, 0.6, 1.1);
-                playerVehicle.add(spoiler);
-
-                const strutLGeo = new THREE.BoxGeometry(0.1, 0.4, 0.1);
-                const strutL = new THREE.Mesh(strutLGeo, spoilerMat);
-                strutL.position.set(-0.5, 0.35, 1.1);
-                playerVehicle.add(strutL);
-
-                const strutR = strutL.clone();
-                strutR.position.x = 0.5;
-                playerVehicle.add(strutR);
-            }
-
-            // Tires / Wheels
-            const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
-            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 });
-            wheelGeo.rotateZ(Math.PI / 2);
-
-            const wPositions = [
-                [-0.7, -0.1, -0.8], // Front Left
-                [0.7, -0.1, -0.8],  // Front Right
-                [-0.7, -0.1, 0.8],  // Rear Left
-                [0.7, -0.1, 0.8]    // Rear Right
-            ];
-            wPositions.forEach(pos => {
-                const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-                wheel.position.set(pos[0], pos[1], pos[2]);
-                wheel.castShadow = true;
-                playerVehicle.add(wheel);
+            // Metallic paint materials
+            const shellMat = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(vSpec.color),
+                roughness: 0.15,
+                metalness: 0.8
             });
 
-            // Tail lights emitting neon flares
-            const lightGeo = new THREE.BoxGeometry(0.4, 0.1, 0.1);
-            const lightMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+            if (vSpec.type === 'car') {
+                // Sleek aerodynamic chassis
+                const shellGeo = new THREE.BoxGeometry(1.4, 0.35, 3.0);
+                const shell = new THREE.Mesh(shellGeo, shellMat);
+                shell.castShadow = true;
+                playerVehicle.add(shell);
+
+                // Front curving bumper/hood
+                const hoodGeo = new THREE.BoxGeometry(1.35, 0.22, 1.2);
+                const hood = new THREE.Mesh(hoodGeo, shellMat);
+                hood.position.set(0, 0.05, -0.9);
+                playerVehicle.add(hood);
+
+                // Cockpit Cabin Windshield
+                const cabGeo = new THREE.BoxGeometry(1.1, 0.45, 1.3);
+                const cabMat = new THREE.MeshStandardMaterial({ color: 0x111116, roughness: 0.02, metalness: 1 });
+                const cabin = new THREE.Mesh(cabGeo, cabMat);
+                cabin.position.set(0, 0.35, -0.15);
+                playerVehicle.add(cabin);
+
+                // Original Dual-Layer GT Wing/Spoiler (Porsche style!)
+                const wingGeo = new THREE.BoxGeometry(1.8, 0.06, 0.45);
+                const wingMat = new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.4 });
+                const spoilerWing = new THREE.Mesh(wingGeo, wingMat);
+                spoilerWing.position.set(0, 0.72, 1.3);
+                playerVehicle.add(spoilerWing);
+                
+                // Endplates
+                const endL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.25, 0.45), wingMat);
+                endL.position.set(-0.9, 0.72, 1.3);
+                playerVehicle.add(endL);
+                const endR = endL.clone();
+                endR.position.x = 0.9;
+                playerVehicle.add(endR);
+
+                // Metallic struts holding spoiler
+                const strutL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.1), wingMat);
+                strutL.position.set(-0.65, 0.45, 1.3);
+                playerVehicle.add(strutL);
+                const strutR = strutL.clone();
+                strutR.position.x = 0.65;
+                playerVehicle.add(strutR);
+
+                // Continuous LED Taillight strip on rear bumper (Iconic Sports look)
+                const tailStripMat = new THREE.MeshBasicMaterial({ color: 0xff0022 });
+                const taillight = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.08, 0.05), tailStripMat);
+                taillight.position.set(0, 0.12, 1.51);
+                playerVehicle.add(taillight);
+
+                // 4 detailed spinning wheels with silver rims
+                const wheelGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.32, 16);
+                const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+                wheelGeo.rotateZ(Math.PI / 2);
+
+                const wheelPositions = [
+                    { x: -0.78, y: -0.1, z: -0.9, isFront: true },  
+                    { x: 0.78, y: -0.1, z: -0.9, isFront: true },   
+                    { x: -0.78, y: -0.1, z: 0.9, isFront: false },  
+                    { x: 0.78, y: -0.1, z: 0.9, isFront: false }    
+                ];
+
+                wheelPositions.forEach(wPos => {
+                    const wheelGroup = new THREE.Group();
+                    const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+                    wheelGroup.add(wheel);
+
+                    // Add rim spoke detailing so rotation is visible!
+                    const spokeGeo = new THREE.BoxGeometry(0.1, 0.8, 0.34);
+                    const spokeMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.3 });
+                    const spoke1 = new THREE.Mesh(spokeGeo, spokeMat);
+                    const spoke2 = spoke1.clone();
+                    spoke2.rotation.x = Math.PI / 2;
+                    wheelGroup.add(spoke1);
+                    wheelGroup.add(spoke2);
+
+                    if (wPos.isFront) {
+                        const pivot = new THREE.Group();
+                        pivot.position.set(wPos.x, wPos.y, wPos.z);
+                        wheelGroup.position.set(0, 0, 0);
+                        pivot.add(wheelGroup);
+                        playerVehicle.add(pivot);
+                        steerableMeshGroup.push(pivot); // turns left/right dynamically
+                        rotatingWheels.push(wheelGroup); // spins on acceleration
+                    } else {
+                        wheelGroup.position.set(wPos.x, wPos.y, wPos.z);
+                        playerVehicle.add(wheelGroup);
+                        rotatingWheels.push(wheelGroup);
+                    }
+                });
+
+            } else if (vSpec.type === 'bike') {
+                // Sleek fuel tank chassis
+                const shellGeo = new THREE.BoxGeometry(0.45, 0.7, 1.8);
+                const shell = new THREE.Mesh(shellGeo, shellMat);
+                shell.position.set(0, 0.25, 0);
+                playerVehicle.add(shell);
+
+                // Exposed silver mechanical engine block
+                const engineBlock = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.45, 0.75), new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.1 }));
+                engineBlock.position.set(0, -0.1, 0);
+                playerVehicle.add(engineBlock);
+
+                // Front Steering fork assembly with horizontal handlebars
+                const forkPivot = new THREE.Group();
+                forkPivot.position.set(0, 0.1, -0.85);
+
+                const fork = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2), new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 }));
+                fork.rotation.x = Math.PI / 6;
+                forkPivot.add(fork);
+
+                // Bar grips
+                const handles = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.08, 0.08), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                handles.position.set(0, 0.58, -0.1);
+                forkPivot.add(handles);
+
+                // Detailed Front Wheel
+                const wFrontGroup = new THREE.Group();
+                const wFront = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.18, 16), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                wFront.rotation.z = Math.PI / 2;
+                wFrontGroup.add(wFront);
+                // spokes
+                const spokes = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.76, 0.2), new THREE.MeshStandardMaterial({ color: 0xbbbbbb }));
+                wFrontGroup.add(spokes);
+
+                wFrontGroup.position.set(0, -0.4, 0);
+                forkPivot.add(wFrontGroup);
+                rotatingWheels.push(wFrontGroup);
+
+                playerVehicle.add(forkPivot);
+                steerableMeshGroup.push(forkPivot); // turns left/right dynamically!
+
+                // Detailed Rear wheel
+                const wRearGroup = new THREE.Group();
+                const wRear = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.22, 16), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                wRear.rotation.z = Math.PI / 2;
+                wRearGroup.add(wRear);
+                const spokesR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.76, 0.24), new THREE.MeshStandardMaterial({ color: 0xbbbbbb }));
+                wRearGroup.add(spokesR);
+
+                wRearGroup.position.set(0, -0.3, 0.85);
+                playerVehicle.add(wRearGroup);
+                rotatingWheels.push(wRearGroup);
+
+                // Rider Pilot leaning forward
+                const riderHead = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 12), new THREE.MeshStandardMaterial({ color: 0x00f2ff, roughness: 0.1 }));
+                riderHead.position.set(0, 0.65, 0.05);
+                playerVehicle.add(riderHead);
+
+                const riderBody = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.4, 0.85), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                riderBody.position.set(0, 0.45, 0.25);
+                riderBody.rotation.x = -Math.PI / 6;
+                playerVehicle.add(riderBody);
+
+            } else if (vSpec.type === 'truck') {
+                // Large cargo container cabin
+                const shellGeo = new THREE.BoxGeometry(1.6, 1.4, 1.6);
+                const shell = new THREE.Mesh(shellGeo, shellMat);
+                shell.position.set(0, 0.5, -1.1);
+                playerVehicle.add(shell);
+
+                // Flatbed trailer container box
+                const containerBox = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.6, 2.5), new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.9 }));
+                containerBox.position.set(0, 0.8, 0.55);
+                playerVehicle.add(containerBox);
+
+                // Front Grille
+                const grille = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.05), new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9 }));
+                grille.position.set(0, 0, -1.91);
+                playerVehicle.add(grille);
+
+                // Tall Chrome smokestacks exhausts (Truck silencers!)
+                const stackL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.8), new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.9 }));
+                stackL.position.set(-0.75, 1.0, -0.2);
+                playerVehicle.add(stackL);
+                const stackR = stackL.clone();
+                stackR.position.x = 0.75;
+                playerVehicle.add(stackR);
+
+                // 6 heavy detailed wheels
+                const heavyWheelGeo = new THREE.CylinderGeometry(0.46, 0.46, 0.4, 16);
+                heavyWheelGeo.rotateZ(Math.PI / 2);
+                const heavyWheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+                const truckWheelPositions = [
+                    { x: -0.88, y: -0.2, z: -0.9, steer: true },
+                    { x: 0.88, y: -0.2, z: -0.9, steer: true },
+                    { x: -0.88, y: -0.2, z: 0.4, steer: false },
+                    { x: 0.88, y: -0.2, z: 0.4, steer: false },
+                    { x: -0.88, y: -0.2, z: 1.2, steer: false },
+                    { x: 0.88, y: -0.2, z: 1.2, steer: false }
+                ];
+
+                truckWheelPositions.forEach(wPos => {
+                    const wheelGroup = new THREE.Group();
+                    const wheel = new THREE.Mesh(heavyWheelGeo, heavyWheelMat);
+                    wheelGroup.add(wheel);
+
+                    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.82, 0.44), new THREE.MeshStandardMaterial({ color: 0x777777 }));
+                    wheelGroup.add(spoke);
+
+                    if (wPos.steer) {
+                        const pivot = new THREE.Group();
+                        pivot.position.set(wPos.x, wPos.y, wPos.z);
+                        wheelGroup.position.set(0, 0, 0);
+                        pivot.add(wheelGroup);
+                        playerVehicle.add(pivot);
+                        steerableMeshGroup.push(pivot);
+                        rotatingWheels.push(wheelGroup);
+                    } else {
+                        wheelGroup.position.set(wPos.x, wPos.y, wPos.z);
+                        playerVehicle.add(wheelGroup);
+                        rotatingWheels.push(wheelGroup);
+                    }
+                });
+            }
+
+            // Chrome Exhaust Pipes with shootable nitro flames (Dual silencer fire)
+            const exhaustGeo = new THREE.ConeGeometry(0.16, 0.75, 12);
+            exhaustGeo.rotateX(-Math.PI / 2);
+            const exhaustMat = new THREE.MeshBasicMaterial({
+                color: 0x00f2ff, 
+                transparent: true,
+                opacity: 0
+            });
+
+            const exhaustL = new THREE.Mesh(exhaustGeo, exhaustMat);
+            // Positions differ slightly based on categories
+            const zOffset = vSpec.type === 'car' ? 1.5 : (vSpec.type === 'bike' ? 0.95 : 1.85);
+            const xOffset = vSpec.type === 'bike' ? 0 : 0.45;
             
-            const lightL = new THREE.Mesh(lightGeo, lightMat);
-            lightL.position.set(-0.4, 0.1, 1.3);
-            playerVehicle.add(lightL);
+            exhaustL.position.set(-xOffset, -0.12, zOffset);
+            playerVehicle.add(exhaustL);
+            exhaustFlames.push(exhaustL);
 
-            const lightR = new THREE.Mesh(lightGeo, lightMat);
-            lightR.position.set(0.4, 0.1, 1.3);
-            playerVehicle.add(lightR);
+            if (vSpec.type !== 'bike') {
+                const exhaustR = exhaustL.clone();
+                exhaustR.position.x = xOffset;
+                playerVehicle.add(exhaustR);
+                exhaustFlames.push(exhaustR);
+            }
 
-            // Exhaust / Flame ejector particle system placeholder mesh
-            const exhaustGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.3);
-            exhaustGeo.rotateX(Math.PI / 2);
-            const exhaustMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-            const exhaust = new THREE.Mesh(exhaustGeo, exhaustMat);
-            exhaust.position.set(0, -0.1, 1.31);
-            playerVehicle.add(exhaust);
+            // Glowing headlights
+            const lightGeo = new THREE.BoxGeometry(0.2, 0.1, 0.1);
+            const lightMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff });
+            const headL = new THREE.Mesh(lightGeo, lightMat);
+            headL.position.set(-0.55, 0.1, vSpec.type === 'car' ? -1.51 : (vSpec.type === 'bike' ? -0.81 : -1.91));
+            playerVehicle.add(headL);
+            const headR = headL.clone();
+            headR.position.x = 0.55;
+            playerVehicle.add(headR);
 
-            // Scale modification based on vehicle types
             playerVehicle.scale.set(vSpec.scale[0], vSpec.scale[1], vSpec.scale[2]);
             scene.add(playerVehicle);
-        }
-
-        function changeVehicleColor(hex) {
-            if (playerVehicle && playerVehicle.children[0]) {
-                playerVehicle.children[0].material.color.setHex(parseInt(hex.replace("#", "0x")));
-            }
-            playTickSound();
         }
     </script>
 
     <script>
-        // Obstacle / Ambient traffic generation
+        // High quality procedurally drawn traffic vehicles facing forward (Facing Same Direction)
         function spawnTraffic() {
             trafficCars.forEach(car => scene.remove(car.mesh));
             trafficCars = [];
+            
+            const lanes = [-5, 0, 5];
             const totalTraffic = 8;
-            const colorPalette = [0xffffff, 0x00ffff, 0xff00ff, 0xffff00, 0x10b981];
+            const carColors = [0x55555d, 0xef4444, 0x10b981, 0x3b82f6, 0xec4899];
 
             for (let i = 0; i < totalTraffic; i++) {
-                const carGroup = new THREE.Group();
-                
-                // Body of Obstacle car
-                const bodyGeo = new THREE.BoxGeometry(1.2, 0.5, 2.5);
+                const group = new THREE.Group();
+
+                // Base block
+                const bodyGeo = new THREE.BoxGeometry(1.4, 0.55, 2.5);
                 const bodyMat = new THREE.MeshStandardMaterial({
-                    color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+                    color: carColors[Math.floor(Math.random() * carColors.length)],
                     roughness: 0.3
                 });
                 const body = new THREE.Mesh(bodyGeo, bodyMat);
-                carGroup.add(body);
+                group.add(body);
 
-                // Windows block
-                const winGeo = new THREE.BoxGeometry(1.0, 0.3, 1.0);
+                // Windshield Cabin
+                const winGeo = new THREE.BoxGeometry(1.1, 0.35, 1.1);
                 const winMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
                 const win = new THREE.Mesh(winGeo, winMat);
-                win.position.set(0, 0.3, -0.1);
-                carGroup.add(win);
+                win.position.set(0, 0.35, -0.1);
+                group.add(win);
 
-                // Position traffic random across 3 lanes (-5, 0, 5)
-                const laneMap = [-5, 0, 5];
-                const chosenLane = laneMap[Math.floor(Math.random() * laneMap.length)];
-                const chosenZ = -40 - (i * 25) - Math.random() * 15;
-                carGroup.position.set(chosenLane, 0.4, chosenZ);
-                
-                scene.add(carGroup);
+                // GLOWING RED TAILLIGHTS (Crucial to make them look like they are traveling ahead of me!)
+                const tailLightMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                const tailL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.1, 0.05), tailLightMat);
+                tailL.position.set(-0.5, 0.1, 1.26);
+                group.add(tailL);
+                const tailR = tailL.clone();
+                tailR.position.x = 0.5;
+                group.add(tailR);
+
+                const chosenLane = lanes[Math.floor(Math.random() * lanes.length)];
+                const posZ = -60 - (i * 35) - Math.random() * 25;
+
+                // facing strictly forward
+                group.position.set(chosenLane, 0.4, posZ);
+                scene.add(group);
+
                 trafficCars.push({
-                    mesh: carGroup,
-                    speed: 15 + Math.random() * 20, // relative traffic velocities
+                    mesh: group,
+                    speed: 14 + Math.random() * 15, // constant slow pacing speed
                     lane: chosenLane,
-                    originalZ: chosenZ
+                    targetLane: chosenLane,
+                    laneSwitchTimer: Math.random() * 3 + 2,
+                    isChangingLane: false,
+                    color: bodyMat.color
                 });
+            }
+        }
+
+        // Advanced AI traffic algorithms (Merging / blocking)
+        function updateTrafficAI(deltaTime) {
+            trafficCars.forEach(car => {
+                // Since traffic moves in our direction, we overtake them.
+                // Relative position towards player: (PlayerSpeed - TrafficSpeed)
+                const relativeSpeedKmh = carVelocity - car.speed;
+                const relativeSpeedMps = relativeSpeedKmh / 3.6;
+                
+                car.mesh.position.z += relativeSpeedMps * deltaTime;
+
+                // Smart Lane change trigger to block player path
+                car.laneSwitchTimer -= deltaTime;
+                if (car.laneSwitchTimer <= 0 && !car.isChangingLane) {
+                    const lanes = [-5, 0, 5];
+                    const currentIdx = lanes.indexOf(car.lane);
+                    let offsets = [];
+                    if (currentIdx === 0) offsets = [1];
+                    else if (currentIdx === 2) offsets = [-1];
+                    else offsets = [-1, 1];
+
+                    const shift = offsets[Math.floor(Math.random() * offsets.length)];
+                    car.targetLane = lanes[currentIdx + shift];
+                    car.isChangingLane = true;
+                    car.laneSwitchTimer = Math.random() * 4 + 3;
+                }
+
+                if (car.isChangingLane) {
+                    const dx = car.targetLane - car.mesh.position.x;
+                    if (Math.abs(dx) > 0.05) {
+                        car.mesh.position.x += Math.sign(dx) * 4 * deltaTime;
+                        car.mesh.rotation.y = Math.sign(dx) * 0.15;
+                    } else {
+                        car.mesh.position.x = car.targetLane;
+                        car.lane = car.targetLane;
+                        car.isChangingLane = false;
+                        car.mesh.rotation.y = 0;
+                    }
+                }
+
+                // Recycle traffic cars when passed
+                if (car.mesh.position.z > 25) {
+                    car.mesh.position.z = -220 - Math.random() * 50;
+                    const lanes = [-5, 0, 5];
+                    car.mesh.position.x = lanes[Math.floor(Math.random() * lanes.length)];
+                    car.lane = car.mesh.position.x;
+                    car.targetLane = car.lane;
+                    car.isChangingLane = false;
+                }
+
+                // Overlap collision checks
+                if (playerVehicle && collisionCooldown <= 0) {
+                    const dx = Math.abs(playerVehicle.position.x - car.mesh.position.x);
+                    const dz = Math.abs(playerVehicle.position.z - car.mesh.position.z);
+                    
+                    if (dx < 1.45 && dz < 2.2) {
+                        handleCollision(car.mesh.position.x, car.mesh.position.z);
+                    }
+                }
+            });
+        }
+
+        let collisionCooldown = 0;
+        function handleCollision(originX, originZ) {
+            collisionCooldown = 1.2;
+            
+            // Decelerate heavily on crash (minimum 30 km/h)
+            carVelocity = Math.max(30, carVelocity - 60);
+            stats.damage = Math.min(100, stats.damage + 15);
+            stats.accidents += 1;
+
+            // Trigger mechanical 3D sparks
+            triggerCollisionSparks(originX, playerVehicle.position.y, playerVehicle.position.z);
+
+            // Shake camera view
+            document.body.classList.add('screen-crash');
+            setTimeout(() => document.body.classList.remove('screen-crash'), 400);
+
+            // Update HUD
+            document.getElementById('hud-damage-bar').style.width = `${stats.damage}%`;
+            document.getElementById('hud-damage-text').innerText = `${stats.damage}%`;
+            document.getElementById('hud-accidents').innerText = stats.accidents;
+            playCrashSound();
+
+            // NOTE: Completely removed any text warning popups or alerts here! 
+            // Only vibration and deceleration will execute.
+
+            if (stats.damage >= 100) {
+                endRace(false);
             }
         }
     </script>
 
     <script>
         let lastTime = performance.now();
-        let collisionCooldown = 0;
 
         function animateLoop() {
             requestAnimationFrame(animateLoop);
@@ -1352,11 +1489,11 @@
             if (isRacing) {
                 updateRacePhysics(deltaTime);
                 updateRoadSectors();
-                updateObstacles(deltaTime);
+                updateTrafficAI(deltaTime);
+                updateSparks(deltaTime);
             } else {
-                // Idle state rotation on main screens
                 if (playerVehicle) {
-                    playerVehicle.rotation.y += deltaTime * 0.4;
+                    playerVehicle.rotation.y += deltaTime * 0.45;
                 }
             }
             updateCameraPosition();
@@ -1366,77 +1503,17 @@
         function updateRoadSectors() {
             const segmentLength = 40;
             roadSegments.forEach(segment => {
-                segment.position.z += carVelocity * 0.15;
-                // Loop track segments infinitely
+                const speedMps = carVelocity / 3.6;
+                segment.position.z += speedMps * 0.6 * lastTime * 0.0001; 
+                segment.position.z += speedMps * 0.1;
+                
                 if (segment.position.z > segmentLength) {
                     segment.position.z -= roadSegments.length * segmentLength;
-                    
-                    // Randomize skyscraper building heights each reload loop
-                    segment.children.forEach(child => {
-                        if (child.geometry && child.geometry.type === 'BoxGeometry' && Math.abs(child.position.x) > 10) {
-                            const newHeight = 15 + Math.random() * 25;
-                            child.scale.y = newHeight / child.geometry.parameters.height;
-                            child.position.y = newHeight / 2;
-                        }
-                    });
                 }
             });
         }
 
-        function updateObstacles(deltaTime) {
-            const resetDistance = 150;
-            
-            trafficCars.forEach(car => {
-                car.mesh.position.z += (carVelocity * 0.15) - (car.speed * deltaTime);
-                // Loop traffic cars back to horizon
-                if (car.mesh.position.z > 20) {
-                    car.mesh.position.z = -resetDistance - Math.random() * 40;
-                    const laneMap = [-5, 0, 5];
-                    car.mesh.position.x = laneMap[Math.floor(Math.random() * laneMap.length)];
-                }
-                // Check Bounding box basic Collision
-                if (playerVehicle && collisionCooldown <= 0) {
-                    const dx = Math.abs(playerVehicle.position.x - car.mesh.position.x);
-                    const dz = Math.abs(playerVehicle.position.z - car.mesh.position.z);
-                    if (dx < 1.4 && dz < 1.8) {
-                        handleAccident();
-                    }
-                }
-            });
-
-            if (collisionCooldown > 0) {
-                collisionCooldown -= deltaTime;
-            }
-        }
-
-        function handleAccident() {
-            collisionCooldown = 1.8;
-            carVelocity = Math.max(0, carVelocity - 60); // decelerate heavily
-            stats.damage = Math.min(100, stats.damage + 25);
-            stats.accidents += 1;
-            
-            // Update UI
-            document.getElementById('hud-damage-bar').style.width = `${stats.damage}%`;
-            document.getElementById('hud-damage-text').innerText = `${stats.damage}%`;
-            document.getElementById('hud-accidents').innerText = stats.accidents;
-            playCrashSound();
-
-            const warning = document.getElementById('impact-warning');
-            if (warning) {
-                warning.classList.remove('hidden');
-                setTimeout(() => {
-                    warning.classList.add('hidden');
-                }, 1200);
-            }
-
-            if (stats.damage >= 100) {
-                endRace(false);
-            }
-        }
-    </script>
-
-    <script>
-        // Bind Keyboard input maps
+        // Setup input mappings safely
         window.addEventListener('keydown', (e) => {
             activeKeys[e.key] = true;
             activeKeys[e.code] = true;
@@ -1446,7 +1523,6 @@
             activeKeys[e.code] = false;
         });
 
-        // Touch support hooks for buttons
         const setupTouchBtn = (id, keyName) => {
             const btn = document.getElementById(id);
             if (!btn) return;
@@ -1480,42 +1556,79 @@
             const isSteeringLeft = activeKeys['ArrowLeft'] || activeKeys['a'] || activeKeys['A'];
             const isSteeringRight = activeKeys['ArrowRight'] || activeKeys['d'] || activeKeys['D'];
 
-            const accelRate = 22;
-            const brakeRate = 45;
-            const dragRate = 6;
-            const speedLimit = activeKeys['Space'] ? maxSpeed + 35 : maxSpeed;
+            const accelRate = 28;
+            const brakeRate = 55;
+            const dragRate = 8;
+            const nitroLimit = activeKeys['Space'] ? maxSpeed + 35 : maxSpeed;
+
+            // Exhaust back silencer fire scales up during active GAS / Space
+            exhaustFlames.forEach(flame => {
+                if (isAccelerating && activeKeys['Space']) {
+                    flame.material.opacity = 1.0;
+                    flame.scale.set(1.5, 1.9 + Math.sin(performance.now() * 0.08), 1.5);
+                } else if (isAccelerating) {
+                    flame.material.opacity = 0.65;
+                    flame.scale.set(1.0, 1.0 + Math.sin(performance.now() * 0.03), 1.0);
+                } else {
+                    flame.material.opacity = 0;
+                }
+            });
 
             if (isAccelerating) {
-                carVelocity = Math.min(speedLimit, carVelocity + accelRate * deltaTime);
+                carVelocity = Math.min(nitroLimit, carVelocity + accelRate * deltaTime);
                 playEngineSound(carVelocity / maxSpeed);
                 if (activeKeys['Space']) playNitroSound();
             } else if (isBraking) {
-                carVelocity = Math.max(0, carVelocity - brakeRate * deltaTime);
+                carVelocity = Math.max(30, carVelocity - brakeRate * deltaTime);
                 playEngineSound(carVelocity / maxSpeed);
-                if (carVelocity > 10) playBrakeSqueal();
+                if (carVelocity > 35) playBrakeSqueal();
             } else {
-                carVelocity = Math.max(0, carVelocity - dragRate * deltaTime);
+                // Natural drag friction deceleration (default minimal speed of 60 KM/H to keep moving!)
+                carVelocity = Math.max(60, carVelocity - dragRate * deltaTime);
                 playEngineSound(carVelocity / maxSpeed * 0.5);
             }
 
-            // Steering bounds mapping
-            const steerSpeed = 6.2 * gameSettings.sensitivity;
+            // Steering Sensitivity mapping
+            const sensitivityVal = parseFloat(document.getElementById('set-sensitivity').value) / 75;
+            const steerSpeed = 6.6 * sensitivityVal;
+
             if (isSteeringLeft) {
                 lanePosition = Math.max(-7.8, lanePosition - steerSpeed * deltaTime);
-                driftAngle = Math.min(0.2, driftAngle + 0.01);
+                driftAngle = Math.min(0.24, driftAngle + 0.015);
+                
+                // Rotate front wheels
+                steerableMeshGroup.forEach(mesh => { mesh.rotation.y = 0.42; });
+                const hudWheel = document.getElementById('hud-wheel-steering');
+                if (hudWheel) hudWheel.style.transform = "rotate(-40deg)";
+
             } else if (isSteeringRight) {
                 lanePosition = Math.min(7.8, lanePosition + steerSpeed * deltaTime);
-                driftAngle = Math.max(-0.2, driftAngle - 0.01);
+                driftAngle = Math.max(-0.24, driftAngle - 0.015);
+                
+                // Rotate front wheels
+                steerableMeshGroup.forEach(mesh => { mesh.rotation.y = -0.42; });
+                const hudWheel = document.getElementById('hud-wheel-steering');
+                if (hudWheel) hudWheel.style.transform = "rotate(40deg)";
+
             } else {
-                driftAngle *= 0.8;
+                driftAngle *= 0.82;
+                steerableMeshGroup.forEach(mesh => { mesh.rotation.y = 0; });
+                const hudWheel = document.getElementById('hud-wheel-steering');
+                if (hudWheel) hudWheel.style.transform = "rotate(0deg)";
             }
+
+            // Spin rotating tires dynamically
+            rotatingWheels.forEach(wheel => {
+                wheel.rotation.x += (carVelocity * 0.15) * deltaTime;
+            });
 
             if (playerVehicle) {
                 playerVehicle.position.x = lanePosition;
                 playerVehicle.rotation.y = driftAngle;
-                playerVehicle.position.y = 0.4 + (Math.sin(performance.now() * 0.08) * (carVelocity / maxSpeed) * 0.02);
+                playerVehicle.position.y = 0.4 + (Math.sin(performance.now() * 0.15) * (carVelocity / maxSpeed) * 0.012);
             }
 
+            // Update stats
             stats.elapsedTime += deltaTime;
             const kmPerSec = carVelocity / 3600;
             stats.distanceLeft = Math.max(0, stats.distanceLeft - (kmPerSec * 1000 * deltaTime));
@@ -1524,32 +1637,25 @@
                 stats.highSpeed = Math.round(carVelocity);
             }
 
-            // Dashboard live updates
+            // Dashboard
             const hudSpeed = document.getElementById('hud-speed');
-            if (hudSpeed) {
-                hudSpeed.innerHTML = `${Math.round(carVelocity)} <span class="text-xs">KM/H</span>`;
-            }
+            if (hudSpeed) hudSpeed.innerHTML = `${Math.round(carVelocity)} <span class="text-xs">KM/H</span>`;
+            
             const hudGear = document.getElementById('hud-gear');
-            if (hudGear) {
-                hudGear.innerText = carVelocity === 0 ? 'N' : Math.ceil(carVelocity / 30);
-            }
+            if (hudGear) hudGear.innerText = carVelocity === 0 ? 'N' : Math.ceil(carVelocity / 38);
 
             const distanceLeftText = stats.distanceLeft >= 1000
                  ? `${(stats.distanceLeft / 1000).toFixed(2)} KM`
                  : `${Math.round(stats.distanceLeft)} M`;
             
             const hudDist = document.getElementById('hud-distance');
-            if (hudDist) {
-                hudDist.innerText = distanceLeftText;
-            }
+            if (hudDist) hudDist.innerText = distanceLeftText;
 
             const timeLeft = Math.max(0, stats.timeLimit - stats.elapsedTime);
             const mins = Math.floor(timeLeft / 60);
             const secs = Math.floor(timeLeft % 60);
             const hudTimer = document.getElementById('hud-timer');
-            if (hudTimer) {
-                hudTimer.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            }
+            if (hudTimer) hudTimer.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 
             const pctTime = (timeLeft / stats.timeLimit) * 100;
             const timerBar = document.getElementById('hud-timer-bar');
@@ -1566,23 +1672,22 @@
             if (timeLeft <= 0) {
                 endRace(false);
             }
+            if (collisionCooldown > 0) {
+                collisionCooldown -= deltaTime;
+            }
         }
 
         function updateCameraPosition() {
             if (!playerVehicle) return;
             if (cameraView === 'third-person') {
-                camera.position.set(playerVehicle.position.x, 2.5, playerVehicle.position.z + 4.5);
-                camera.lookAt(playerVehicle.position.x, 0.8, playerVehicle.position.z - 10);
+                camera.position.set(playerVehicle.position.x * 0.85, 2.3, playerVehicle.position.z + 4.9);
+                camera.lookAt(playerVehicle.position.x * 0.75, 0.7, playerVehicle.position.z - 12);
             } else if (cameraView === 'driver') {
-                camera.position.set(playerVehicle.position.x, 0.7, playerVehicle.position.z - 0.4);
-                camera.lookAt(playerVehicle.position.x, 0.6, playerVehicle.position.z - 15);
+                camera.position.set(playerVehicle.position.x, 0.75, playerVehicle.position.z - 0.45);
+                camera.lookAt(playerVehicle.position.x, 0.65, playerVehicle.position.z - 15);
             } else if (cameraView === 'top') {
-                camera.position.set(playerVehicle.position.x, 8.5, playerVehicle.position.z - 2.0);
-                camera.lookAt(playerVehicle.position.x, 0, playerVehicle.position.z - 2.1);
-            } else if (cameraView === 'cinematic') {
-                const angle = performance.now() * 0.0005;
-                camera.position.set(playerVehicle.position.x + Math.sin(angle) * 8, 4.0, playerVehicle.position.z + Math.cos(angle) * 8);
-                camera.lookAt(playerVehicle.position);
+                camera.position.set(playerVehicle.position.x, 9.5, playerVehicle.position.z - 2.5);
+                camera.lookAt(playerVehicle.position.x, 0, playerVehicle.position.z - 2.6);
             }
         }
 
@@ -1593,109 +1698,18 @@
     </script>
 
     <script>
-        // GEMINI API UTILITIES
-        const apiKey = ""; // Implicitly active in the container environment
-
-        async function fetchAIResponse(userPrompt, systemContext) {
-            let retries = 5;
-            let currentDelay = 1000;
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: userPrompt }] }],
-                systemInstruction: { parts: [{ text: systemContext }] }
-            };
-
-            while (retries > 0) {
-                try {
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!response.ok) throw new Error("Fetch failed");
-                    const data = await response.json();
-                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "No advice found.";
-                } catch (e) {
-                    retries--;
-                    if (retries === 0) {
-                        return "Drivixa AI Advisor is offline. Keep racing and stay safe!";
-                    }
-                    await new Promise(r => setTimeout(r, currentDelay));
-                    currentDelay *= 2;
-                }
-            }
-        }
-
-        async function requestAIStrategy() {
-            const outputBox = document.getElementById('ai-strategy-box');
-            const outputText = document.getElementById('ai-strategy-output');
-            const targetDist = document.getElementById('target-distance-select').value || "2.0";
-            const targetTime = document.getElementById('target-time-select').value || "120";
-            const vehicles = VEHICLE_DATA[activeCategory];
-            const v = vehicles[activeVehicleIndex];
-
-            outputBox.classList.remove('hidden');
-            outputText.innerText = "Analyzing vehicle specifications & path telemetry...";
-
-            const prompt = `Develop a brief 1-sentence racing strategy for riding the ${v.name} (Top Speed: ${v.speed} KM/H, Category: ${v.type}) on our ${activeRoute} track for a target distance of ${targetDist} KM with a ${targetTime}s limit. Respond in cool, brief gamer terminology.`;
-            const systemContext = "You are a professional Drivixa racing co-pilot providing telemetry strategies. Be extremely concise (1 sentence max).";
-            
-            const strategyText = await fetchAIResponse(prompt, systemContext);
-            outputText.innerText = strategyText;
-        }
-
-        async function requestTuningAdvice() {
-            const inputField = document.getElementById('ai-tuning-input');
-            const outputText = document.getElementById('ai-tuning-output');
-            const query = inputField.value.trim();
-            if (!query) return;
-
-            outputText.classList.remove('hidden');
-            outputText.innerText = "Consulting garage database...";
-            inputField.value = "";
-
-            const vehicles = VEHICLE_DATA[activeCategory];
-            const v = vehicles[activeVehicleIndex];
-            const prompt = `The player is currently looking at ${v.name} in their garage. They ask: "${query}". Provide a highly relevant, brief 1-sentence mechanical/tuning response.`;
-            const systemContext = "You are the head engineer of Drivixa Sandbox garage. You give short, witty, and mathematically accurate vehicle customization recommendations.";
-
-            const advice = await fetchAIResponse(prompt, systemContext);
-            outputText.innerText = advice;
-        }
-
-        async function requestTelemetryReport(victory) {
-            const reportContainer = document.getElementById('ai-telemetry-report');
-            const minVal = Math.floor(stats.elapsedTime / 60);
-            const secVal = Math.floor(stats.elapsedTime % 60);
-            const finalTimeStr = `${minVal.toString().padStart(2, '0')}:${secVal.toString().padStart(2, '0')}`;
-            const vehicles = VEHICLE_DATA[activeCategory];
-            const v = vehicles[activeVehicleIndex];
-
-            reportContainer.innerText = "Formulating neural telemetry breakdown...";
-
-            const prompt = `Analyze race telemetry. Status: ${victory ? "VICTORY" : "CRASH/TIME-OUT"}. Vehicle: ${v.name}. Time taken: ${finalTimeStr}. Max Speed Peak: ${stats.highSpeed} KM/H. Damage: ${stats.damage}%. Accidents registered: ${stats.accidents}. Tell the player in 1 concise, engaging sentence how their run was. Use lighthearted, high-energy racing talk.`;
-            const systemContext = "You are an elite live-stream commentator analyzing telemetry details for an arcade sandbox. Give a cool 1-sentence analysis.";
-
-            const report = await fetchAIResponse(prompt, systemContext);
-            reportContainer.innerText = report;
-        }
-    </script>
-
-    <script>
         document.getElementById('btn-start-game').addEventListener('click', () => {
             const distVal = document.getElementById('target-distance-select').value;
             const timeVal = document.getElementById('target-time-select').value;
             if (gameMode !== 'multiplayer' && (!distVal || !timeVal)) {
                 const warn = document.getElementById('target-warning');
                 warn.classList.remove('hidden');
-                setTimeout(() => {
-                    warn.classList.add('hidden');
-                }, 3000);
+                setTimeout(() => warn.classList.add('hidden'), 3000);
                 return;
             }
 
             stats.targetDistance = distVal ? parseFloat(distVal) * 1000 : 2000;
-            stats.timeLimit = timeVal ? parseInt(timeVal) : 120;
+            stats.timeLimit = timeVal ? parseInt(timeVal) : 80;
             stats.distanceLeft = stats.targetDistance;
             stats.elapsedTime = 0;
             stats.damage = 0;
@@ -1710,10 +1724,10 @@
             const accTxt = document.getElementById('hud-accidents');
             if (accTxt) accTxt.innerText = `0`;
 
-            // Reset track based on environment choice
+            setEnvironmentSkyColor();
             buildRoadSystem();
 
-            // Slide out Main Menu cleanly
+            // Slide out Main Menu
             document.getElementById('main-menu').classList.add('hidden');
             triggerRaceCountdown();
         });
@@ -1733,11 +1747,12 @@
                     setTimeout(() => {
                         overlay.className = "text-8xl md:text-9xl font-orbitron font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-amber-400 tracking-wider transition-all duration-300 scale-50 opacity-0";
                         step++;
-                        setTimeout(countdownStep, 400);
-                    }, 600);
+                        setTimeout(countdownStep, 450);
+                    }, 550);
                 } else {
                     overlay.classList.add('hidden');
                     isRacing = true;
+                    carVelocity = 60; // Initial default speed on start
                     
                     const hudTop = document.getElementById('hud-top');
                     const hudBottom = document.getElementById('hud-bottom');
@@ -1752,8 +1767,8 @@
             isRacing = false;
             stopEngineSound();
 
-            document.getElementById('hud-top').className = "w-full flex justify-between items-start gap-4 transition-all duration-300 transform -translate-y-24 opacity-0";
-            document.getElementById('hud-bottom').className = "w-full flex justify-between items-end gap-4 transition-all duration-300 transform translate-y-24 opacity-0";
+            document.getElementById('hud-top').className = "w-full flex justify-between items-start gap-4 transition-all duration-300 transform -translate-y-28 opacity-0";
+            document.getElementById('hud-bottom').className = "w-full flex justify-between items-end gap-4 transition-all duration-300 transform translate-y-28 opacity-0";
 
             // Display results
             const endPanel = document.getElementById('game-end-panel');
@@ -1773,14 +1788,14 @@
             const medalIcon = document.getElementById('end-medal-icon');
 
             if (victory) {
-                statusHeading.innerText = "MISSION SUCCESS";
+                statusHeading.innerText = "RACE SUCCESS";
                 statusHeading.className = "text-4xl font-extrabold font-orbitron text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400";
                 statusSub.innerText = "You dominated the speed charts!";
                 medalIcon.className = "w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center text-white text-4xl mb-4 animate-bounce";
                 medalIcon.innerHTML = `<i class="fa-solid fa-trophy"></i>`;
                 
-                const pointsReward = 250;
-                const coinReward = 150;
+                const pointsReward = 350;
+                const coinReward = 200;
                 document.getElementById('end-stat-coins').innerText = `+${coinReward} COINS & +${pointsReward} XP`;
 
                 const currentCoins = parseInt(document.getElementById('user-coins').innerText.replace(/\D/g,'')) + coinReward;
@@ -1788,21 +1803,17 @@
                 document.getElementById('user-coins').innerHTML = `<i class="fa-solid fa-coins mr-1"></i>${currentCoins.toLocaleString()}`;
                 document.getElementById('user-xp').innerText = currentXP.toLocaleString();
             } else {
-                statusHeading.innerText = "MISSION FAILED";
+                statusHeading.innerText = "CHALLENGE FAILED";
                 statusHeading.className = "text-4xl font-extrabold font-orbitron text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-500";
-                statusSub.innerText = "Vehicular limit exceeded or time out!";
+                statusSub.innerText = "Car limit exceeded or time out!";
                 medalIcon.className = "w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-red-500 to-rose-600 flex items-center justify-center text-white text-4xl mb-4";
                 medalIcon.innerHTML = `<i class="fa-solid fa-heart-crack animate-pulse"></i>`;
-                document.getElementById('end-stat-coins').innerText = `No bonus rewards allocated`;
+                document.getElementById('end-stat-coins').innerText = `No rewards allocated`;
             }
-
-            // Fire AI Analysis
-            requestTelemetryReport(victory);
         }
 
         function shareStats() {
-            const textToCopy = `DRIVIXA RACING PROFILE: Finished with Max Speed of ${stats.highSpeed} KM/H with only ${stats.accidents} accidents! Can you beat my telemetry score?`;
-            
+            const textToCopy = `DRIVIXA No-Hesi Drift: Finished with peak speed ${stats.highSpeed} KM/H with only ${stats.accidents} accidents! Can you beat me?`;
             const tempInput = document.createElement("input");
             tempInput.value = textToCopy;
             document.body.appendChild(tempInput);
@@ -1845,17 +1856,12 @@
 
     <script>
         window.onload = function () {
-            // Setup initial default selected data elements
+            // Force categories highlight to match cars on first load
             updateVehicleUI();
-            
-            // Load default camera setting preference
             cameraView = gameSettings.cameraMode;
-            
-            // Start Three JS simulation loops
             initThreeJS();
         };
 
-        // Responsive Canvas Resizing hooks
         window.addEventListener('resize', () => { 
             if (camera && renderer) { 
                 const container = document.getElementById('three-canvas-container');
